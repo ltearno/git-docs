@@ -4,8 +4,11 @@ build-prepare:
 	go get github.com/jteeuwen/go-bindata/...
 	go get github.com/elazarl/go-bindata-assetfs/...
 
-build:
-	go build -o bin/mgit main.go
+build-embed-assets:
+	go-bindata-assetfs assets/...
+
+build: build-embed-assets
+	go build -o mgit main.go
 
 run-serve:
 	go run main.go serve
