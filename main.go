@@ -5,15 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path"
-)
 
-func existsFile(path string) bool {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return false
-	} else {
-		return true
-	}
-}
+	"./repository"
+	"./tools"
+	"./webserver"
+)
 
 func detectGitRootdirectory() *string {
 	dir, err := os.Getwd()
@@ -23,7 +19,7 @@ func detectGitRootdirectory() *string {
 
 	for cur := dir; cur != ""; {
 		maybeGitDir := path.Join(cur, ".git")
-		if existsFile(maybeGitDir) {
+		if tools.ExistsFile(maybeGitDir) {
 			return &cur
 		}
 
@@ -31,29 +27,6 @@ func detectGitRootdirectory() *string {
 	}
 
 	return nil
-}
-
-func ensureWorkingSpaceReady(repositoryDir string) bool {
-	workingSpaceRoot := path.Join(repositoryDir, ".magic-git")
-	if !existsFile(workingSpaceRoot) {
-		var err = os.Mkdir(workingSpaceRoot, 0755)
-		if err != nil {
-			return false
-		}
-
-		err = os.Mkdir(path.Join(workingSpaceRoot, "issues"), 0755)
-		if err != nil {
-			fmt.Printf("ERROR %v\n!\n", err)
-			return false
-		}
-
-		err = os.Mkdir(path.Join(workingSpaceRoot, "tmp"), 0755)
-		if err != nil {
-			return false
-		}
-	}
-
-	return true
 }
 
 func main() {
@@ -94,7 +67,8 @@ func main() {
 	fmt.Printf(" working in %s\n", *gitRepositoryDir)
 	fmt.Println()
 
-	ok := ensureWorkingSpaceReady(*gitRepositoryDir)
+	magic := repository.NewMagicGitRepository(*gitRepositoryDir)
+	ok := magic.EnsureWorkingSpaceReady()
 	if !ok {
 		fmt.Printf("ERROR cannot prepare working directory !\n")
 		return
@@ -104,7 +78,7 @@ func main() {
 	// execute the verb
 	switch verbs[0] {
 	case "serve":
-		fmt.Println("starting web server")
+		webserver.Test()
 		break
 
 	case "issue":
