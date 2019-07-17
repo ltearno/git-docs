@@ -156,7 +156,6 @@ func (magic *MagicGitRepository) AddIssue(name string) bool {
 		return false
 	}
 
-	// check magic files clean in repository
 	if !isGitRepositoryClean(magic.gitRepositoryDir) {
 		return false
 	}
