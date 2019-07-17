@@ -1,11 +1,13 @@
 package webserver
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"strings"
 
 	"../assetsgen"
 	"../repository"
@@ -19,20 +21,32 @@ type WebServer struct {
 	magic *repository.MagicGitRepository
 }
 
-func handler(w http.ResponseWriter, r *http.Request, path string, server *WebServer) {
+func interpolate(name string, templateContent string, context interface{}) *string {
+	t, err := template.New(name).Parse(templateContent)
+	if err != nil {
+		return nil
+	}
+
+	buffer := bytes.NewBufferString("")
+	t.Execute(buffer, context)
+	result := string(buffer.Bytes())
+	return &result
+}
+
+func handler(w http.ResponseWriter, r *http.Request, relativePath string, server *WebServer) {
 	context := &PageContext{
 		Name: "First context member",
 	}
 
-	rawTemplateBytes, err := assetsgen.Asset("assets/" + path)
+	rawTemplateBytes, err := assetsgen.Asset("assets/" + relativePath)
 	if err != nil {
-		fmt.Fprintf(w, "Sorry, nothing here (%s)", path)
+		fmt.Fprintf(w, "Sorry, nothing here (%s)", relativePath)
 	} else {
 		rawTemplate := string(rawTemplateBytes)
-		t, err := template.New(path).Parse(string(rawTemplate))
+		t, err := template.New(relativePath).Parse(string(rawTemplate))
 		if err != nil {
 			fmt.Fprintf(w, "Sorry, internal problem")
-			fmt.Printf("error cannot parse %s %v", path, err)
+			fmt.Printf("error cannot parse %s %v", relativePath, err)
 		} else {
 			t.Execute(w, context)
 		}
@@ -64,34 +78,65 @@ func jsonResponse(w http.ResponseWriter, code int, value interface{}) {
 		return
 	}
 
-	w.WriteHeader(code)
-	w.Write(body)
+	httpResponse(w, code, string(body))
 }
 
-func handlerIssuesRestAPI(w http.ResponseWriter, r *http.Request, path string, server *WebServer) {
+func httpResponse(w http.ResponseWriter, code int, body string) {
+	w.WriteHeader(code)
+	w.Write([]byte(body))
+}
+
+func handlerIssuesRestAPI(w http.ResponseWriter, r *http.Request, relativePath string, server *WebServer) {
 	w.Header().Set("Content-Type", "application/json")
 
-	if path == "" && r.Method == http.MethodGet {
-		issues := server.magic.Issues()
-		jsonResponse(w, 200, issues)
-	} else if path != "" && r.Method == http.MethodPost {
-		if server.magic.AddIssue(path) {
+	if r.Method == http.MethodGet {
+		if relativePath == "" {
+			issues := server.magic.Issues()
+			jsonResponse(w, 200, issues)
+		} else {
+			if strings.HasSuffix(relativePath, "/metadata") {
+				name := relativePath[0 : len(relativePath)-len("/metadata")]
+				metadata, err := server.magic.GetIssueMetadata(name)
+				if err != nil {
+					errorResponse(w, 404, "not found metadata")
+				} else {
+					jsonResponse(w, 200, metadata)
+				}
+			} else if strings.HasSuffix(relativePath, "/content") {
+				name := relativePath[0 : len(relativePath)-len("/content")]
+				content, err := server.magic.GetIssueContent(name)
+				if err != nil {
+					errorResponse(w, 404, "not found content")
+				} else {
+					w.Header().Set("Content-Type", "text/markdown")
+					if r.URL.Query().Get("interpolation") == "true" {
+
+					} else {
+						httpResponse(w, 200, *content)
+					}
+				}
+			} else {
+				errorResponse(w, 404, "not found, or invalid path")
+			}
+		}
+	} else if relativePath != "" && r.Method == http.MethodPost {
+		if server.magic.AddIssue(relativePath) {
 			messageResponse(w, "issue added")
 		} else {
-			errorResponse(w, 500, "error")
+			errorResponse(w, 500, "error (maybe already exists ?)")
 		}
 	} else {
 		errorResponse(w, 404, "not found")
 	}
 }
 
-func addHandler(path string, fn func(http.ResponseWriter, *http.Request, string, *WebServer), server *WebServer) {
+func addHandler(pathPrefix string, fn func(http.ResponseWriter, *http.Request, string, *WebServer), server *WebServer) {
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		path := r.URL.Path[len(path):]
-		fn(w, r, path, server)
+		pathPrefix := r.URL.Path[len(pathPrefix):]
+		fn(w, r, pathPrefix, server)
 	}
 
-	http.HandleFunc(path, handler)
+	http.HandleFunc(pathPrefix, handler)
 }
 
 func NewWebServer(magic *repository.MagicGitRepository) *WebServer {

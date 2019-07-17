@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 
 	"../assetsgen"
 	"../tools"
@@ -62,25 +63,93 @@ func writeFile(path string, content string) bool {
 
 	defer file.Close()
 
-	writer := bufio.NewWriter(file)
-
-	_, err = writer.WriteString(content)
+	written, err := file.Write([]byte(content))
 	if err != nil {
 		return false
 	}
 
+	fmt.Printf("written %d bytes to %s\n", written, path)
+
 	return true
 }
 
+func readFile(path string) ([]byte, interface{}) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, "cannot open for read"
+	}
+
+	defer file.Close()
+
+	reader := bufio.NewReader(file)
+	content, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, "cannot read"
+	}
+
+	fmt.Printf("read from file %s\n%s", path, content)
+
+	return content, nil
+}
+
+func (self *MagicGitRepository) getIssuesPath() string {
+	return path.Join(self.workingDir, "issues")
+}
+
+func (self *MagicGitRepository) getIssueDirPath(name string) string {
+	return path.Join(self.getIssuesPath(), name)
+}
+
+func (self *MagicGitRepository) getIssueMetadataFilePath(name string) string {
+	return path.Join(self.getIssueDirPath(name), "metadata.json")
+}
+
+func (self *MagicGitRepository) getIssueContentFilePath(name string) string {
+	return path.Join(self.getIssueDirPath(name), "content.md")
+}
+
+func (self *MagicGitRepository) GetIssueContent(name string) (*string, interface{}) {
+	filePath := self.getIssueContentFilePath(name)
+	bytes, err := readFile(filePath)
+	if err != nil {
+		return nil, "no content"
+	}
+
+	content := string(bytes)
+
+	return &content, nil
+}
+
+func (self *MagicGitRepository) GetIssueMetadata(name string) (*IssueMetadata, interface{}) {
+	filePath := self.getIssueMetadataFilePath(name)
+	bytes, err := readFile(filePath)
+	if err != nil {
+		return nil, "no content"
+	}
+
+	result := &IssueMetadata{}
+
+	err = json.Unmarshal(bytes, result)
+	if err != nil {
+		return nil, "unmarshall"
+	}
+
+	return result, nil
+}
+
 func (self *MagicGitRepository) AddIssue(name string) bool {
-	issueDir := path.Join(self.workingDir, "issues", name)
+	if strings.Contains(name, "/") {
+		return false
+	}
+
+	issueDir := self.getIssueDirPath(name)
 	if tools.ExistsFile(issueDir) {
 		return false
 	}
 
 	os.Mkdir(issueDir, 0755)
 
-	ok := writeFileJson(path.Join(issueDir, "metadata.json"), IssueMetadata{Flags: []string{}})
+	ok := writeFileJson(self.getIssueMetadataFilePath(name), IssueMetadata{Flags: []string{}})
 	if !ok {
 		return false
 	}
@@ -90,7 +159,7 @@ func (self *MagicGitRepository) AddIssue(name string) bool {
 		return false
 	}
 
-	ok = writeFile(path.Join(issueDir, "content.md"), string(issueContentModelBytes))
+	ok = writeFile(self.getIssueContentFilePath(name), string(issueContentModelBytes))
 	if !ok {
 		return false
 	}
