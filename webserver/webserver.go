@@ -78,7 +78,7 @@ func handlerIssuesRestAPI(w http.ResponseWriter, r *http.Request, path string, s
 		if server.magic.AddIssue(path) {
 			messageResponse(w, "issue added")
 		} else {
-			errorResponse(w, 500, "issue exists")
+			errorResponse(w, 500, "error")
 		}
 	} else {
 		errorResponse(w, 404, "not found")
