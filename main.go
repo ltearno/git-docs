@@ -78,7 +78,7 @@ func main() {
 	// execute the verb
 	switch verbs[0] {
 	case "serve":
-		webserver.Test()
+		webserver.Run(magic)
 		break
 
 	case "issue":
