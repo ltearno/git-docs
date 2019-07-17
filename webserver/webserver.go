@@ -9,9 +9,9 @@ import (
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	//name := r.URL.Path[len("/webui/"):]
+	name := r.URL.Path[len("/webui/"):]
 
-	fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
+	fmt.Fprintf(w, "Hi there, I love %s!", name)
 }
 
 /* Run runs the Web server... */
