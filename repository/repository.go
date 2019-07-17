@@ -175,13 +175,24 @@ func commitChanges(gitRepositoryDir string, message string) bool {
 	cmd := exec.Command("git", "commit", "-am", message)
 	cmd.Dir = gitRepositoryDir
 
-	err := cmd.Start()
+	out, err := cmd.StdoutPipe()
+	if err != nil {
+		return false
+	}
+
+	err = cmd.Start()
+	if err != nil {
+		return false
+	}
+
+	content, err := ioutil.ReadAll(out)
 	if err != nil {
 		return false
 	}
 
 	err = cmd.Wait()
 	if err != nil {
+		fmt.Printf("error commit\n%s", string(content))
 		return false
 	}
 
