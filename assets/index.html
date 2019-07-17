@@ -1,17 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Magic Git UI</title>
 </head>
+
 <body>
     Welcome {{ .Name }}
 
-    Display list of issues
+    <h1>Issues</h1>
+    <ul id='board-issues-ul'>
+    </ul>
 
-    Add an issue
+    <div>
+        Add an issue<br />
+        <label><input id='new-issue-name' type="text" placeholder="create an issue..." /></label>
+        <button id='new-issue-button'>Create issue</button>
+    </div>
 
     Display git status
+
+    <div id='board-opened-issues'></div>
+
+    <script>
+        const el = document.getElementById.bind(document)
+
+        function postData(url = '', data = {}) {
+            return fetch(url, {
+                method: 'POST', // *GET, POST, PUT, DELETE, etc.
+                mode: 'cors', // no-cors, cors, *same-origin
+                cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+                credentials: 'same-origin', // include, *same-origin, omit
+                headers: {
+                    'Content-Type': 'application/json',
+                    // 'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                redirect: 'follow', // manual, *follow, error
+                referrer: 'no-referrer', // no-referrer, *client
+                body: JSON.stringify(data), // body data type must match "Content-Type" header
+            })
+                .then(response => response.json()); // parses JSON response into native JavaScript objects 
+        }
+
+        function clear() {
+            el('board-issues-ul').innerHTML = ''
+            el('board-opened-issues').innerHTML = ''
+        }
+
+        function showIssue(name) {
+            const issueElement = document.createElement('div')
+            issueElement.innerHTML += `<h1>Issue ${name}</h1>`
+            const metadataElement = document.createElement('div')
+            metadataElement.innerHTML += `<h2>Metadata</h2>`
+            issueElement.appendChild(metadataElement)
+            const contentElement = document.createElement('div')
+            contentElement.innerHTML += `<h2>Content</h2>`
+            issueElement.appendChild(contentElement)
+
+            el('board-opened-issues').appendChild(issueElement)
+
+            fetch(`/api/issues/${name}/metadata`)
+                .then(response => response.json())
+                .then(metadata => metadataElement.innerHTML += `<pre>${JSON.stringify(metadata, null, 2)}</pre>`)
+
+            fetch(`/api/issues/${name}/content?interpolated=true`)
+                .then(response => response.text())
+                .then(content => contentElement.innerHTML += `<pre>${content}</pre>`)
+        }
+
+        function loadIssues() {
+            fetch("/api/issues")
+                .then(response => response.json())
+                .then(issues => el('board-issues-ul').innerHTML += issues.map(name => `<li onclick='showIssue("${name}")'>${name}</li>`).join(''))
+        }
+
+        el('new-issue-button').addEventListener('click', () => {
+            let name = el('new-issue-name').value
+
+            postData(`/api/issues/${name}`, {})
+                .then(_ => showIssue(name))
+        })
+
+        loadIssues()
+    </script>
 </body>
+
 </html>
