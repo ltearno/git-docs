@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -15,6 +16,12 @@ import (
 
 type PageContext struct {
 	Name string
+}
+
+type IssueContext struct {
+	Issue struct {
+		Name string
+	}
 }
 
 type WebServer struct {
@@ -28,8 +35,16 @@ func interpolate(name string, templateContent string, context interface{}) *stri
 	}
 
 	buffer := bytes.NewBufferString("")
+
 	t.Execute(buffer, context)
-	result := string(buffer.Bytes())
+
+	out, err := ioutil.ReadAll(buffer)
+	if err != nil {
+		return nil
+	}
+
+	result := string(out)
+
 	return &result
 }
 
@@ -43,12 +58,12 @@ func handler(w http.ResponseWriter, r *http.Request, relativePath string, server
 		fmt.Fprintf(w, "Sorry, nothing here (%s)", relativePath)
 	} else {
 		rawTemplate := string(rawTemplateBytes)
-		t, err := template.New(relativePath).Parse(string(rawTemplate))
-		if err != nil {
-			fmt.Fprintf(w, "Sorry, internal problem")
-			fmt.Printf("error cannot parse %s %v", relativePath, err)
+
+		interpolated := interpolate(relativePath, rawTemplate, context)
+		if interpolated != nil {
+			httpResponse(w, 200, *interpolated)
 		} else {
-			t.Execute(w, context)
+			httpResponse(w, 200, rawTemplate)
 		}
 	}
 }
@@ -109,8 +124,16 @@ func handlerIssuesRestAPI(w http.ResponseWriter, r *http.Request, relativePath s
 					errorResponse(w, 404, "not found content")
 				} else {
 					w.Header().Set("Content-Type", "text/markdown")
-					if r.URL.Query().Get("interpolation") == "true" {
+					if r.URL.Query().Get("interpolated") == "true" {
+						context := &IssueContext{}
+						context.Issue.Name = name
 
+						interpolated := interpolate(name, *content, context)
+						if interpolated != nil {
+							httpResponse(w, 200, *interpolated)
+						} else {
+							errorResponse(w, 500, "cannot interpolate")
+						}
 					} else {
 						httpResponse(w, 200, *content)
 					}
