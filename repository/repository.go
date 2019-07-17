@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"strings"
 
@@ -137,12 +138,28 @@ func (magic *MagicGitRepository) GetIssueMetadata(name string) (*IssueMetadata, 
 	return result, nil
 }
 
+func isGitRepositoryClean(dir string) bool {
+	//git status --porcelain
+	cmd := exec.Command("git", "status", "--porcelain")
+	out, err := cmd.StdoutPipe()
+	cmd.Dir = dir
+	err = cmd.Start()
+	content, err := ioutil.ReadAll(out)
+
+	fmt.Printf("Command finished with error: %v %s", err, content)
+
+	return true
+}
+
 func (magic *MagicGitRepository) AddIssue(name string) bool {
 	if strings.Contains(name, "/") {
 		return false
 	}
 
 	// check magic files clean in repository
+	if !isGitRepositoryClean(magic.gitRepositoryDir) {
+		return false
+	}
 
 	issueDir := magic.getIssueDirPath(name)
 	if tools.ExistsFile(issueDir) {
