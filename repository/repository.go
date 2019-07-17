@@ -171,6 +171,24 @@ func isGitRepositoryClean(dir string) bool {
 	return false
 }
 
+func commitChanges(gitRepositoryDir string, message string) bool {
+	cmd := exec.Command("git", "commit", "-am", message)
+	cmd.Dir = gitRepositoryDir
+
+	err := cmd.Start()
+	if err != nil {
+		return false
+	}
+
+	err = cmd.Wait()
+	if err != nil {
+		return false
+	}
+
+	// if commit has been ok, we should be clean
+	return isGitRepositoryClean(gitRepositoryDir)
+}
+
 func (magic *MagicGitRepository) AddIssue(name string) bool {
 	if strings.Contains(name, "/") {
 		return false
@@ -198,6 +216,11 @@ func (magic *MagicGitRepository) AddIssue(name string) bool {
 	}
 
 	ok = writeFile(magic.getIssueContentFilePath(name), string(issueContentModelBytes))
+	if !ok {
+		return false
+	}
+
+	ok = commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - added issue %s", name))
 	if !ok {
 		return false
 	}
