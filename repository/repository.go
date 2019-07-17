@@ -29,8 +29,8 @@ func NewMagicGitRepository(gitRepositoryDir string) *MagicGitRepository {
 	}
 }
 
-func (self *MagicGitRepository) Issues() []string {
-	files, err := ioutil.ReadDir(path.Join(self.workingDir, "issues"))
+func (magic *MagicGitRepository) Issues() []string {
+	files, err := ioutil.ReadDir(path.Join(magic.workingDir, "issues"))
 	if err != nil {
 		return []string{}
 	}
@@ -92,24 +92,24 @@ func readFile(path string) ([]byte, interface{}) {
 	return content, nil
 }
 
-func (self *MagicGitRepository) getIssuesPath() string {
-	return path.Join(self.workingDir, "issues")
+func (magic *MagicGitRepository) getIssuesPath() string {
+	return path.Join(magic.workingDir, "issues")
 }
 
-func (self *MagicGitRepository) getIssueDirPath(name string) string {
-	return path.Join(self.getIssuesPath(), name)
+func (magic *MagicGitRepository) getIssueDirPath(name string) string {
+	return path.Join(magic.getIssuesPath(), name)
 }
 
-func (self *MagicGitRepository) getIssueMetadataFilePath(name string) string {
-	return path.Join(self.getIssueDirPath(name), "metadata.json")
+func (magic *MagicGitRepository) getIssueMetadataFilePath(name string) string {
+	return path.Join(magic.getIssueDirPath(name), "metadata.json")
 }
 
-func (self *MagicGitRepository) getIssueContentFilePath(name string) string {
-	return path.Join(self.getIssueDirPath(name), "content.md")
+func (magic *MagicGitRepository) getIssueContentFilePath(name string) string {
+	return path.Join(magic.getIssueDirPath(name), "content.md")
 }
 
-func (self *MagicGitRepository) GetIssueContent(name string) (*string, interface{}) {
-	filePath := self.getIssueContentFilePath(name)
+func (magic *MagicGitRepository) GetIssueContent(name string) (*string, interface{}) {
+	filePath := magic.getIssueContentFilePath(name)
 	bytes, err := readFile(filePath)
 	if err != nil {
 		return nil, "no content"
@@ -120,8 +120,8 @@ func (self *MagicGitRepository) GetIssueContent(name string) (*string, interface
 	return &content, nil
 }
 
-func (self *MagicGitRepository) GetIssueMetadata(name string) (*IssueMetadata, interface{}) {
-	filePath := self.getIssueMetadataFilePath(name)
+func (magic *MagicGitRepository) GetIssueMetadata(name string) (*IssueMetadata, interface{}) {
+	filePath := magic.getIssueMetadataFilePath(name)
 	bytes, err := readFile(filePath)
 	if err != nil {
 		return nil, "no content"
@@ -137,21 +137,21 @@ func (self *MagicGitRepository) GetIssueMetadata(name string) (*IssueMetadata, i
 	return result, nil
 }
 
-func (self *MagicGitRepository) AddIssue(name string) bool {
+func (magic *MagicGitRepository) AddIssue(name string) bool {
 	if strings.Contains(name, "/") {
 		return false
 	}
 
 	// check magic files clean in repository
 
-	issueDir := self.getIssueDirPath(name)
+	issueDir := magic.getIssueDirPath(name)
 	if tools.ExistsFile(issueDir) {
 		return false
 	}
 
 	os.Mkdir(issueDir, 0755)
 
-	ok := writeFileJson(self.getIssueMetadataFilePath(name), IssueMetadata{Flags: []string{}})
+	ok := writeFileJson(magic.getIssueMetadataFilePath(name), IssueMetadata{Flags: []string{}})
 	if !ok {
 		return false
 	}
@@ -161,7 +161,7 @@ func (self *MagicGitRepository) AddIssue(name string) bool {
 		return false
 	}
 
-	ok = writeFile(self.getIssueContentFilePath(name), string(issueContentModelBytes))
+	ok = writeFile(magic.getIssueContentFilePath(name), string(issueContentModelBytes))
 	if !ok {
 		return false
 	}
@@ -169,22 +169,22 @@ func (self *MagicGitRepository) AddIssue(name string) bool {
 	return true
 }
 
-func (self *MagicGitRepository) EnsureWorkingSpaceReady() bool {
-	if !tools.ExistsFile(self.workingDir) {
-		var err = os.Mkdir(self.workingDir, 0755)
+func (magic *MagicGitRepository) EnsureWorkingSpaceReady() bool {
+	if !tools.ExistsFile(magic.workingDir) {
+		var err = os.Mkdir(magic.workingDir, 0755)
 		if err != nil {
 			return false
 		}
 
-		writeFile(path.Join(self.workingDir, ".gitignore"), "tmp")
+		writeFile(path.Join(magic.workingDir, ".gitignore"), "tmp")
 
-		err = os.Mkdir(path.Join(self.workingDir, "issues"), 0755)
+		err = os.Mkdir(path.Join(magic.workingDir, "issues"), 0755)
 		if err != nil {
 			fmt.Printf("ERROR %v\n!\n", err)
 			return false
 		}
 
-		err = os.Mkdir(path.Join(self.workingDir, "tmp"), 0755)
+		err = os.Mkdir(path.Join(magic.workingDir, "tmp"), 0755)
 		if err != nil {
 			return false
 		}
