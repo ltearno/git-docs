@@ -139,16 +139,36 @@ func (magic *MagicGitRepository) GetIssueMetadata(name string) (*IssueMetadata, 
 }
 
 func isGitRepositoryClean(dir string) bool {
-	//git status --porcelain
 	cmd := exec.Command("git", "status", "--porcelain")
-	out, err := cmd.StdoutPipe()
 	cmd.Dir = dir
+
+	out, err := cmd.StdoutPipe()
+	if err != nil {
+		return false
+	}
+
 	err = cmd.Start()
+	if err != nil {
+		return false
+	}
+
 	content, err := ioutil.ReadAll(out)
+	if err != nil {
+		return false
+	}
 
-	fmt.Printf("Command finished with error: %v %s", err, content)
+	err = cmd.Wait()
+	if err != nil {
+		return false
+	}
 
-	return true
+	if string(content) == "" {
+		return true
+	}
+
+	fmt.Printf("git repository is not clean !")
+
+	return false
 }
 
 func (magic *MagicGitRepository) AddIssue(name string) bool {
