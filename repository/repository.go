@@ -142,6 +142,8 @@ func (self *MagicGitRepository) AddIssue(name string) bool {
 		return false
 	}
 
+	// check magic files clean in repository
+
 	issueDir := self.getIssueDirPath(name)
 	if tools.ExistsFile(issueDir) {
 		return false
@@ -173,6 +175,8 @@ func (self *MagicGitRepository) EnsureWorkingSpaceReady() bool {
 		if err != nil {
 			return false
 		}
+
+		writeFile(path.Join(self.workingDir, ".gitignore"), "tmp")
 
 		err = os.Mkdir(path.Join(self.workingDir, "issues"), 0755)
 		if err != nil {
