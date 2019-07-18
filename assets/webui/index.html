@@ -76,6 +76,7 @@
 
         <div id='board-opened-issues'></div>
 
+        <h1>Logs</h1>
         <div id="log"></div>
     </div>
     <footer id="footer">
@@ -96,7 +97,7 @@
 
         let logMessages = []
         const log = msg => {
-            logMessages.push(msg)
+            logMessages.unshift(msg)
             if (logMessages.length > 10)
                 logMessages = logMessages.slice(0, 10)
             el('log').innerHTML = logMessages.map(msg => `<div>${msg}</div>`).join('')
@@ -109,14 +110,21 @@
                 cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
                 credentials: 'same-origin', // include, *same-origin, omit
                 headers: {
-                    'Content-Type': 'application/json',
-                    // 'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/json'
                 },
                 redirect: 'follow', // manual, *follow, error
                 referrer: 'no-referrer', // no-referrer, *client
                 body: JSON.stringify(data), // body data type must match "Content-Type" header
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        log(`post to ${url} failed`)
+                        return
+                    }
+
+                    log(`OK post ${url}`)
+                    return response.json()
+                })
                 .catch(err => log(`post to ${url} failed`))
         }
 
@@ -186,9 +194,10 @@
 
                 putData(`/api/issues/${name}/content`, textArea.value)
                     .then(_ => {
+                        log(`update issue ${name}`)
                         reloadWithIssue(name)
                     })
-                    .catch(err => log(`addIssue ${name} failed`))
+                    .catch(err => log(`editIssue ${name} failed`))
             })
         }
 
@@ -253,6 +262,7 @@
         function deleteIssue(name) {
             deleteData(`/api/issues/${name}`)
                 .then(_ => {
+                    log(`delete issue ${name}`)
                     reloadWithIssue(null)
                 })
                 .catch(err => log(`deleteIssue ${name} failed`))
@@ -261,6 +271,7 @@
         function addIssue(name) {
             postData(`/api/issues/${name}`, {})
                 .then(_ => {
+                    log(`add issue ${name}`)
                     reloadWithIssue(name)
                 })
                 .catch(err => log(`addIssue ${name} failed`))

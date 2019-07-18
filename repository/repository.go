@@ -140,7 +140,7 @@ func (magic *MagicGitRepository) SetIssueContent(name string, content string) (b
 		return false, "error"
 	}
 
-	ok = commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - updated issue %s", name), magic.workingDir)
+	ok = commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - updated issue content %s", name), magic.workingDir)
 	if !ok {
 		return false, "commit error"
 	}
@@ -163,6 +163,34 @@ func (magic *MagicGitRepository) GetIssueMetadata(name string) (*IssueMetadata, 
 	}
 
 	return result, nil
+}
+
+func (magic *MagicGitRepository) SetIssueMetadata(name string, metadata *IssueMetadata) (bool, interface{}) {
+	if strings.Contains(name, "/") {
+		return false, "invalid name"
+	}
+
+	if !isGitRepositoryClean(magic.gitRepositoryDir) {
+		return false, "repository is dirty"
+	}
+
+	bytes, err := json.Marshal(*metadata)
+	if err != nil {
+		return false, "json error"
+	}
+
+	filePath := magic.getIssueMetadataFilePath(name)
+	ok := writeFile(filePath, string(bytes))
+	if !ok {
+		return false, "write file error"
+	}
+
+	ok = commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - updated issue metadata %s", name), magic.workingDir)
+	if !ok {
+		return false, "commit error"
+	}
+
+	return true, nil
 }
 
 // TODO should return false only when .magic-git is unclean, not user's files!

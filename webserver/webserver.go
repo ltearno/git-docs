@@ -212,8 +212,29 @@ func handlerIssuesRestAPI(w http.ResponseWriter, r *http.Request, relativePath s
 					if err != nil || !ok {
 						errorResponse(w, 400, "error setting content")
 					} else {
-						messageResponse(w, "issue added")
+						messageResponse(w, "issue metadata updated")
 					}
+				}
+			} else if strings.HasSuffix(relativePath, "/metadata") {
+				name := relativePath[0 : len(relativePath)-len("/metadata")]
+				out, err := ioutil.ReadAll(r.Body)
+				if err != nil {
+					errorResponse(w, 400, "error in body")
+				} else {
+					metadata := &repository.IssueMetadata{}
+
+					err = json.Unmarshal(out, metadata)
+					if err != nil {
+						errorResponse(w, 400, "error malformatted json")
+					} else {
+						ok, err := server.magic.SetIssueMetadata(name, metadata)
+						if err != nil || !ok {
+							errorResponse(w, 400, "error setting metadata")
+						} else {
+							messageResponse(w, "issue metadata updated")
+						}
+					}
+
 				}
 			} else {
 				errorResponse(w, 400, "error in path")
