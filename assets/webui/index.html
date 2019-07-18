@@ -2,31 +2,57 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="mui-0.9.42/css/mui.css" rel="stylesheet" />
+    <!--<link href="mui-0.9.42/extra/mui-rem.css" rel="stylesheet" />-->
+    <script src="mui-0.9.42/js/mui.js"></script>
+
     <title>Magic Git UI</title>
 </head>
 
 <body>
-    <h1>Status</h1>
-    <div id='board-status'></div>
-
-    <div>
-        <h1 style="display: inline">Issues</h1>
-        <span>
-            <form id='new-issue-form'>
-                - add
-                <label><input id='new-issue-name' type="text" placeholder="create an issue..." /></label>
-                <button role="submit">Create issue</button>
-            </form>
-        </span>
+    <div id="sidedrawer" class="mui--no-user-select">
+        <!-- Side drawer content goes here -->
     </div>
-    <ul id='board-issues-ul'>
-    </ul>
+    <header id="header">
+        <div class="mui-appbar mui--appbar-line-height">
+            <div class="mui-container-fluid">
+                <a
+                    class="sidedrawer-toggle mui--visible-xs-inline-block mui--visible-sm-inline-block js-show-sidedrawer">☰</a>
+                <a class="sidedrawer-toggle mui--hidden-xs mui--hidden-sm js-hide-sidedrawer">☰</a>
+                <span class="mui--text-title mui--visible-xs-inline-block">Brand.io</span>
+            </div>
+        </div>
+    </header>
+    <div id="content-wrapper">
+        <h1>Status</h1>
+        <div id='board-status'></div>
 
-    <div id='board-opened-issues'></div>
+        <div>
+            <h1 style="display: inline">Issues</h1>
+            <span>
+                <form id='new-issue-form'>
+                    - add
+                    <label><input id='new-issue-name' type="text" placeholder="create an issue..." /></label>
+                    <button role="submit">Create issue</button>
+                </form>
+            </span>
+        </div>
+        <ul id='board-issues-ul'>
+        </ul>
 
-    <div id="log"></div>
+        <div id='board-opened-issues'></div>
+
+        <div id="log"></div>
+    </div>
+    <footer id="footer">
+        <div class="mui-container-fluid">
+            <br>
+            Made with ♥ by <a href="https://github.com/ltearno">Ltearno</a>
+        </div>
+    </footer>
 
     <script>
         const el = document.getElementById.bind(document)

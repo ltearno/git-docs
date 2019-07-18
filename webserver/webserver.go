@@ -48,23 +48,34 @@ func interpolate(name string, templateContent string, context interface{}) *stri
 	return &result
 }
 
-func handler(w http.ResponseWriter, r *http.Request, relativePath string, server *WebServer) {
-	context := &PageContext{
-		Name: "First context member",
-	}
-
-	rawTemplateBytes, err := assetsgen.Asset("assets/" + relativePath)
+func handlerWebUi(w http.ResponseWriter, r *http.Request, relativePath string, server *WebServer) {
+	rawContentBytes, err := assetsgen.Asset("assets/webui/" + relativePath)
 	if err != nil {
-		fmt.Fprintf(w, "Sorry, nothing here (%s)", relativePath)
+		errorResponse(w, 404, fmt.Sprintf("not found '%s'", relativePath))
 	} else {
-		rawTemplate := string(rawTemplateBytes)
+		content := string(rawContentBytes)
+		contentType := "application/octet-stream"
 
-		interpolated := interpolate(relativePath, rawTemplate, context)
-		if interpolated != nil {
-			httpResponse(w, 200, *interpolated)
-		} else {
-			httpResponse(w, 200, rawTemplate)
+		if strings.HasSuffix(relativePath, ".md") {
+			context := &PageContext{
+				Name: "First context member",
+			}
+
+			contentType = "application/markdown"
+			interpolated := interpolate(relativePath, content, context)
+			if interpolated != nil {
+				content = *interpolated
+			}
+		} else if strings.HasSuffix(relativePath, ".css") {
+			contentType = "text/css"
+		} else if strings.HasSuffix(relativePath, ".js") {
+			contentType = "application/javascript"
+		} else if strings.HasSuffix(relativePath, ".html") {
+			contentType = "text/html"
 		}
+
+		w.Header().Set("Content-Type", contentType)
+		httpResponse(w, 200, content)
 	}
 }
 
@@ -210,7 +221,7 @@ func NewWebServer(magic *repository.MagicGitRepository) *WebServer {
 }
 
 func (self *WebServer) Init() {
-	addHandler("/webui/", handler, self)
+	addHandler("/webui/", handlerWebUi, self)
 	addHandler("/api/issues", handlerIssuesRestAPI, self)
 	addHandler("/api/issues/", handlerIssuesRestAPI, self)
 	addHandler("/api/status", handlerStatusRestAPI, self)
