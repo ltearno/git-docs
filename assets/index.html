@@ -72,6 +72,7 @@
         }
 
         function loadIssues() {
+            el('board-issues-ul').innerHTML = ''
             fetch("/api/issues")
                 .then(response => response.json())
                 .then(issues => el('board-issues-ul').innerHTML += issues.map(name => `<li onclick='showIssue("${name}")'>${name}</li>`).join(''))
