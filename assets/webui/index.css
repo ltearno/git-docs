@@ -153,3 +153,14 @@ html, body, input, textarea, button {
 #sidedrawer strong+ul>li {
     padding: 6px 0px;
 }
+
+.badge {
+    background-color: #AB47BC;
+    display: inline-block;
+    color: white;
+    border-radius: 1em;
+    padding-left: .5em;
+    padding-right: .5em;
+    margin-left: .2em;
+    margin-right: .2em;
+}

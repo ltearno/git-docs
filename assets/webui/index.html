@@ -9,6 +9,7 @@
     <!--<link href="mui-0.9.42/extra/mui-rem.css" rel="stylesheet"  type="text/css"/>-->
     <link href="index.css" rel="stylesheet" type="text/css" />
     <script src="mui-0.9.42/js/mui.js"></script>
+    <script src="showdown.min.js"></script>
 
     <title>Magic Git UI</title>
 </head>
@@ -57,27 +58,34 @@
         </div>
     </header>
     <div id="content-wrapper">
-        <div class="mui--appbar-height"></div>
-        <h1>Status</h1>
-        <div id='board-status'></div>
+        <div class='mui-container-fluid'>
+            <div class="mui--appbar-height"></div>
+            <h1>Status</h1>
+            <div class="mui-panel">
+                <div id='board-status'></div>
+            </div>
 
-        <div>
-            <h1 style="display: inline">Issues</h1>
-            <span>
-                <form id='new-issue-form'>
-                    - add
-                    <label><input id='new-issue-name' type="text" placeholder="create an issue..." /></label>
-                    <button role="submit" class="mui-btn mui-btn--primary mui-btn--flat">Create issue</button>
-                </form>
-            </span>
+            <h1>Issues</h1>
+            <div class="mui-panel">
+                <span>
+                    <form id='new-issue-form'>
+                        - add
+                        <label><input id='new-issue-name' type="text" placeholder="create an issue..." /></label>
+                        <button role="submit" class="mui-btn mui-btn--primary mui-btn--flat">Create issue</button>
+                    </form>
+                </span>
+                <ul id='board-issues-ul'>
+                </ul>
+            </div>
+
+            <h1>Detail zone</h1>
+            <div id='board-opened-issues'></div>
+
+            <h1>Logs</h1>
+            <div class="mui-panel">
+                <div id="log"></div>
+            </div>
         </div>
-        <ul id='board-issues-ul'>
-        </ul>
-
-        <div id='board-opened-issues'></div>
-
-        <h1>Logs</h1>
-        <div id="log"></div>
     </div>
     <footer id="footer">
         <div class="mui-container-fluid">
@@ -87,6 +95,8 @@
     </footer>
 
     <script>
+        const converter = new showdown.Converter()
+
         const el = document.getElementById.bind(document)
 
         const elFromHtml = html => {
@@ -174,7 +184,8 @@
                 return
 
             const issueElement = document.createElement('div')
-            issueElement.innerHTML += `<h1>Issue ${name}</h1>`
+            issueElement.classList.add('mui-panel')
+            issueElement.innerHTML += `<h1>${name}</h1>`
             const contentElement = document.createElement('div')
             contentElement.innerHTML += `<h2>Content</h2>`
             issueElement.appendChild(contentElement)
@@ -246,16 +257,14 @@
                 return
 
             const issueElement = document.createElement('div')
-            issueElement.innerHTML += `<h1>Issue details</h1>`
-            issueElement.innerHTML += `<div>name: ${name}</div>`
-            issueElement.innerHTML += `<form id='issue-add-tag-form'>Tags: <label><input id='issue-add-tag-text'/></label><button role='submit'>add</button></form>`
+            issueElement.classList.add('mui-panel')
+            issueElement.innerHTML += `<div class='mui--text-dark-secondary mui--text-caption'>${name}</div>`
             const metadataElement = document.createElement('div')
-            metadataElement.innerHTML += `<h2>Metadata</h2>`
             issueElement.appendChild(metadataElement)
             const contentElement = document.createElement('div')
-            contentElement.innerHTML += `<h2>Content</h2>`
             issueElement.appendChild(contentElement)
             issueElement.appendChild(elFromHtml(`<button onclick='editIssue("${name}")' class="mui-btn mui-btn--primary mui-btn--raised">Edit issue</button>`))
+            issueElement.appendChild(elFromHtml(`<form id='issue-add-tag-form'>Tags: <label><input id='issue-add-tag-text'/></label><button role='submit' class='mui-btn mui-btn--primary mui-btn--flat'>add</button></form>`))
 
             issueElement.querySelector('#issue-add-tag-form').addEventListener('submit', event => {
                 event.preventDefault()
@@ -270,12 +279,21 @@
 
             fetch(`/api/issues/${name}/metadata`)
                 .then(response => response.json())
-                .then(metadata => metadataElement.innerHTML += `<pre>${JSON.stringify(metadata, null, 2)}</pre>`)
+                .then(metadata => {
+                    if (metadata && metadata.tags) {
+                        metadataElement.innerHTML += metadata.tags.map(tag => `<div class="badge">${tag}</div>`).join('')
+                    }
+                    else {
+                        metadataElement.innerHTML += `<pre>${JSON.stringify(metadata, null, 2)}</pre>`
+                    }
+                })
                 .catch(err => log(`get metadata for ${name} failed`))
 
             fetch(`/api/issues/${name}/content?interpolated=true`)
                 .then(response => response.text())
-                .then(content => contentElement.innerHTML += `<pre>${content}</pre>`)
+                .then(content => {
+                    contentElement.innerHTML += converter.makeHtml(content)
+                })
                 .catch(err => log(`get content for ${name} failed`))
         }
 
