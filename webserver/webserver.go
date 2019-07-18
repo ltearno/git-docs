@@ -200,6 +200,27 @@ func handlerIssuesRestAPI(w http.ResponseWriter, r *http.Request, relativePath s
 		} else {
 			errorResponse(w, 404, "name not specified")
 		}
+	} else if r.Method == http.MethodPut {
+		if relativePath != "" {
+			if strings.HasSuffix(relativePath, "/content") {
+				name := relativePath[0 : len(relativePath)-len("/content")]
+				out, err := ioutil.ReadAll(r.Body)
+				if err != nil {
+					errorResponse(w, 400, "error in body")
+				} else {
+					ok, err := server.magic.SetIssueContent(name, string(out))
+					if err != nil || !ok {
+						errorResponse(w, 400, "error setting content")
+					} else {
+						messageResponse(w, "issue added")
+					}
+				}
+			} else {
+				errorResponse(w, 400, "error in path")
+			}
+		} else {
+			errorResponse(w, 404, "name not specified")
+		}
 	} else {
 		errorResponse(w, 404, "not found")
 	}

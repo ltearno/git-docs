@@ -125,6 +125,29 @@ func (magic *MagicGitRepository) GetIssueContent(name string) (*string, interfac
 	return &content, nil
 }
 
+func (magic *MagicGitRepository) SetIssueContent(name string, content string) (bool, interface{}) {
+	if strings.Contains(name, "/") {
+		return false, "invalid name"
+	}
+
+	if !isGitRepositoryClean(magic.gitRepositoryDir) {
+		return false, "repository is dirty"
+	}
+
+	filePath := magic.getIssueContentFilePath(name)
+	ok := writeFile(filePath, content)
+	if !ok {
+		return false, "error"
+	}
+
+	ok = commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - updated issue %s", name), magic.workingDir)
+	if !ok {
+		return false, "commit error"
+	}
+
+	return true, nil
+}
+
 func (magic *MagicGitRepository) GetIssueMetadata(name string) (*IssueMetadata, interface{}) {
 	filePath := magic.getIssueMetadataFilePath(name)
 	bytes, err := readFile(filePath)

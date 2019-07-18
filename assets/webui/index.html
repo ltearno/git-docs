@@ -120,6 +120,23 @@
                 .catch(err => log(`post to ${url} failed`))
         }
 
+        function putData(url = '', data = {}) {
+            return fetch(url, {
+                method: 'PUT',
+                mode: 'cors',
+                cache: 'no-cache',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': typeof data == "string" ? "application/markdown" : 'application/json'
+                },
+                redirect: 'follow',
+                referrer: 'no-referrer',
+                body: typeof data == "string" ? data : JSON.stringify(data)
+            })
+                .then(response => response.json())
+                .catch(err => log(`post to ${url} failed`))
+        }
+
         function deleteData(url = '', data = {}) {
             return fetch(url, {
                 method: 'DELETE',
@@ -153,14 +170,26 @@
             const contentElement = document.createElement('div')
             contentElement.innerHTML += `<h2>Content</h2>`
             issueElement.appendChild(contentElement)
-            issueElement.appendChild(elFromHtml(`<button onclick='showIssue("${name}")' class="mui-btn mui-btn--primary mui-btn--raised">Cancel</button>`))
+            issueElement.appendChild(elFromHtml(`<button onclick='showIssue("${name}")' class="mui-btn mui-btn--raised">Cancel</button>`))
+            issueElement.appendChild(elFromHtml(`<button class="validate-edit mui-btn mui-btn--primary mui-btn--raised">Validate</button>`))
 
             el('board-opened-issues').appendChild(issueElement)
 
             fetch(`/api/issues/${name}/content`)
                 .then(response => response.text())
-                .then(content => contentElement.innerHTML += `<textarea style='width:80em;height:30em;'>${content}</textarea>`)
+                .then(content => contentElement.innerHTML += `<textarea class='issue-content-textarea' style='width:80em;height:30em;'>${content}</textarea>`)
                 .catch(err => log(`get content for ${name} failed`))
+
+            let validateButton = issueElement.getElementsByClassName('validate-edit').item(0)
+            validateButton.addEventListener('click', () => {
+                let textArea = issueElement.getElementsByClassName('issue-content-textarea').item(0)
+
+                putData(`/api/issues/${name}/content`, textArea.value)
+                    .then(_ => {
+                        reloadWithIssue(name)
+                    })
+                    .catch(err => log(`addIssue ${name} failed`))
+            })
         }
 
         function showIssue(name) {
