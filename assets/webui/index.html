@@ -67,7 +67,7 @@
                 <form id='new-issue-form'>
                     - add
                     <label><input id='new-issue-name' type="text" placeholder="create an issue..." /></label>
-                    <button role="submit">Create issue</button>
+                    <button role="submit" class="mui-btn mui-btn--primary mui-btn--raised">Create issue</button>
                 </form>
             </span>
         </div>
@@ -153,7 +153,7 @@
             const contentElement = document.createElement('div')
             contentElement.innerHTML += `<h2>Content</h2>`
             issueElement.appendChild(contentElement)
-            issueElement.appendChild(elFromHtml(`<button onclick='showIssue("${name}")'>Cancel</button>`))
+            issueElement.appendChild(elFromHtml(`<button onclick='showIssue("${name}")' class="mui-btn mui-btn--primary mui-btn--raised">Cancel</button>`))
 
             el('board-opened-issues').appendChild(issueElement)
 
@@ -177,7 +177,7 @@
             const contentElement = document.createElement('div')
             contentElement.innerHTML += `<h2>Content</h2>`
             issueElement.appendChild(contentElement)
-            issueElement.appendChild(elFromHtml(`<button onclick='editIssue("${name}")'>Edit issue</button>`))
+            issueElement.appendChild(elFromHtml(`<button onclick='editIssue("${name}")' class="mui-btn mui-btn--primary mui-btn--raised">Edit issue</button>`))
 
             el('board-opened-issues').appendChild(issueElement)
 
@@ -197,7 +197,7 @@
             fetch("/api/issues")
                 .then(response => response.json())
                 .then(issues => {
-                    prep += issues.map(name => `<li><button class='delete' onclick='deleteIssue("${name}")'>X</button> <span onclick='showIssue("${name}")'>${name}</span></li>`).join('')
+                    prep += issues.map(name => `<li><button class='delete' onclick='deleteIssue("${name}")' class="mui-btn mui-btn--primary mui-btn--raised">X</button> <span onclick='showIssue("${name}")'>${name}</span></li>`).join('')
                     el('board-issues-ul').innerHTML = prep
                 })
                 .catch(err => log(`loadIssues failed`))
