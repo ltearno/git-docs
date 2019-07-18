@@ -10,6 +10,9 @@
 <body>
     Welcome {{ .Name }}
 
+    <h1>Status</h1>
+    <div id='board-status'></div>
+
     <h1>Issues</h1>
     <ul id='board-issues-ul'>
     </ul>
@@ -19,8 +22,6 @@
         <label><input id='new-issue-name' type="text" placeholder="create an issue..." /></label>
         <button id='new-issue-button'>Create issue</button>
     </div>
-
-    Display git status
 
     <div id='board-opened-issues'></div>
 
@@ -76,14 +77,28 @@
                 .then(issues => el('board-issues-ul').innerHTML += issues.map(name => `<li onclick='showIssue("${name}")'>${name}</li>`).join(''))
         }
 
+        function loadStatus() {
+            fetch("/api/status")
+                .then(response => response.json())
+                .then(status => {
+                    el('board-status').innerHTML = `<span style='color:${status.clean ? 'green' : 'red'};'>${status.clean ? 'CLEAN' : 'DIRTY'}</span>`
+                    if (!status.clean)
+                        el('board-status').innerHTML += `<pre>${status.text}</pre>`
+                })
+        }
+
         el('new-issue-button').addEventListener('click', () => {
             let name = el('new-issue-name').value
 
             postData(`/api/issues/${name}`, {})
-                .then(_ => showIssue(name))
+                .then(_ => {
+                    showIssue(name)
+                    loadStatus()
+                })
         })
 
         loadIssues()
+        loadStatus()
     </script>
 </body>
 
