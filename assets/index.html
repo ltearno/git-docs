@@ -50,6 +50,11 @@
         }
 
         function showIssue(name) {
+            if (!name) {
+                el('board-opened-issues').innerHTML = ''
+                return
+            }
+
             const issueElement = document.createElement('div')
             issueElement.innerHTML += `<h1>Issue ${name}</h1>`
             const metadataElement = document.createElement('div')
@@ -76,7 +81,7 @@
             fetch("/api/issues")
                 .then(response => response.json())
                 .then(issues => {
-                    prep += issues.map(name => `<li onclick='showIssue("${name}")'>${name}</li>`).join('')
+                    prep += issues.map(name => `<li onclick='showIssue("${name}")'>${name}<button class='delete' onclick='deleteIssue("${name}")'>X</button></li>`).join('')
                     el('board-issues-ul').innerHTML = prep
                 })
         }
@@ -92,15 +97,30 @@
                 })
         }
 
+        function reloadWithIssue(issue) {
+            showIssue(issue)
+            loadStatus()
+            loadIssues()
+        }
+
+        function deleteIssue(name) {
+            deleteData(`/api/issues/${name}`)
+                .then(_ => {
+                    reloadWithIssue(null)
+                })
+        }
+
+        function addIssue(name) {
+            postData(`/api/issues/${name}`, {})
+                .then(_ => {
+                    reloadWithIssue(name)
+                })
+        }
+
         el('new-issue-button').addEventListener('click', () => {
             let name = el('new-issue-name').value
 
-            postData(`/api/issues/${name}`, {})
-                .then(_ => {
-                    showIssue(name)
-                    loadStatus()
-                    loadIssues()
-                })
+            addIssue(name)
         })
 
         loadIssues()

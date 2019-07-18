@@ -172,9 +172,9 @@ func handlerIssuesRestAPI(w http.ResponseWriter, r *http.Request, relativePath s
 		if relativePath != "" {
 			result, err := server.magic.DeleteIssue(relativePath)
 			if err != nil {
-				errorResponse(w, 500, "error")
+				errorResponse(w, 500, fmt.Sprintf("delete error : %v", err))
 			} else {
-				messageResponse(w, "issue deleted")
+				jsonResponse(w, 200, map[string]bool{"deleted": result})
 			}
 		} else {
 			errorResponse(w, 404, "name not specified")
