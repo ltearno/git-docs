@@ -67,7 +67,7 @@
                 <form id='new-issue-form'>
                     - add
                     <label><input id='new-issue-name' type="text" placeholder="create an issue..." /></label>
-                    <button role="submit" class="mui-btn mui-btn--primary mui-btn--raised">Create issue</button>
+                    <button role="submit" class="mui-btn mui-btn--primary mui-btn--flat">Create issue</button>
                 </form>
             </span>
         </div>
@@ -197,7 +197,7 @@
             fetch("/api/issues")
                 .then(response => response.json())
                 .then(issues => {
-                    prep += issues.map(name => `<li><button class='delete' onclick='deleteIssue("${name}")' class="mui-btn mui-btn--primary mui-btn--raised">X</button> <span onclick='showIssue("${name}")'>${name}</span></li>`).join('')
+                    prep += issues.map(name => `<li><span onclick='showIssue("${name}")'>${name}</span><button onclick='deleteIssue("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></li>`).join('')
                     el('board-issues-ul').innerHTML = prep
                 })
                 .catch(err => log(`loadIssues failed`))
