@@ -31,6 +31,12 @@
     <script>
         const el = document.getElementById.bind(document)
 
+        const elFromHtml = html => {
+            const e = document.createElement('div')
+            e.innerHTML = html
+            return e.children.item(0)
+        }
+
         let logMessages = []
         const log = msg => {
             logMessages.push(msg)
@@ -81,12 +87,6 @@
 
         function editIssue(name) {
             el('board-opened-issues').innerHTML = 'edit'
-        }
-
-        const elFromHtml = html => {
-            const e = document.createElement('div')
-            e.innerHTML = html
-            return e.children.item(0)
         }
 
         function showIssue(name) {
