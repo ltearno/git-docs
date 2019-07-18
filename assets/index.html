@@ -59,6 +59,7 @@
             contentElement.innerHTML += `<h2>Content</h2>`
             issueElement.appendChild(contentElement)
 
+            el('board-opened-issues').innerHTML = ''
             el('board-opened-issues').appendChild(issueElement)
 
             fetch(`/api/issues/${name}/metadata`)
