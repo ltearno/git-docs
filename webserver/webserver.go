@@ -101,14 +101,28 @@ func httpResponse(w http.ResponseWriter, code int, body string) {
 	w.Write([]byte(body))
 }
 
+type StatusResponse struct {
+	Clean bool   `json:"clean"`
+	Text  string `json:"text"`
+}
+
 func handlerStatusRestAPI(w http.ResponseWriter, r *http.Request, relativePath string, server *WebServer) {
 	status, err := server.magic.GetStatus()
 	if err != nil {
 		errorResponse(w, 500, "internal error")
 	}
 
-	w.Header().Set("Content-Type", "text/plain")
-	httpResponse(w, 200, *status)
+	clean, err := server.magic.IsClean()
+	if err != nil {
+		errorResponse(w, 500, "internal error")
+	}
+
+	response := StatusResponse{
+		Clean: clean,
+		Text:  *status,
+	}
+
+	jsonResponse(w, 200, response)
 }
 
 func handlerIssuesRestAPI(w http.ResponseWriter, r *http.Request, relativePath string, server *WebServer) {

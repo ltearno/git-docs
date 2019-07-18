@@ -219,13 +219,17 @@ func commitChanges(gitRepositoryDir string, message string, committedDir string)
 	return isGitRepositoryClean(gitRepositoryDir)
 }
 
+func (magic *MagicGitRepository) IsClean() (bool, interface{}) {
+	return isGitRepositoryClean(magic.gitRepositoryDir), nil
+}
+
 func (magic *MagicGitRepository) GetStatus() (*string, interface{}) {
 	output, err := execCommand(magic.gitRepositoryDir, "git", "status")
 	if err != nil {
 		return nil, err
 	}
 
-	return nil, output
+	return output, nil
 }
 
 func (magic *MagicGitRepository) AddIssue(name string) bool {
