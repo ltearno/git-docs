@@ -97,9 +97,9 @@
 
         let logMessages = []
         const log = msg => {
-            logMessages.unshift(msg)
+            logMessages.push(msg)
             if (logMessages.length > 10)
-                logMessages = logMessages.slice(0, 10)
+                logMessages = logMessages.slice(-10)
             el('log').innerHTML = logMessages.map(msg => `<div>${msg}</div>`).join('')
         }
 
