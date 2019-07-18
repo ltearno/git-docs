@@ -1,4 +1,4 @@
-# Issue {{ .Issue.Name }}
+# {{ .Issue.Name }}
 
 C'est un problèmem de fond !
 
