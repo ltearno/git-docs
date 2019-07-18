@@ -2,8 +2,8 @@
 
 C'est un problèmem de fond !
 
-[] coucou
-[X] cici
+- [] coucou
+- [X] cici
 
 ## Summary
 
