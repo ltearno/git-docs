@@ -296,7 +296,7 @@ func (magic *MagicGitRepository) DeleteIssue(name string) (bool, interface{}) {
 		return false, false
 	}
 
-	return false, true
+	return true, nil
 }
 
 func (magic *MagicGitRepository) EnsureWorkingSpaceReady() bool {
