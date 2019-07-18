@@ -260,6 +260,9 @@ func (magic *MagicGitRepository) SetIssueMetadata(name string, metadata *IssueMe
 	return true, nil
 }
 
+// list of authors, with their rank on first part of each line :
+// git shortlog -sne --all
+
 // TODO should return false only when .magic-git is unclean, not user's files!
 func isGitRepositoryClean(dir string) bool {
 	cmd := exec.Command("git", "status", "--porcelain")
