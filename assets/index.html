@@ -44,6 +44,22 @@
                 .then(response => response.json()); // parses JSON response into native JavaScript objects 
         }
 
+        function deleteData(url = '', data = {}) {
+            return fetch(url, {
+                method: 'DELETE',
+                mode: 'cors',
+                cache: 'no-cache',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                redirect: 'follow',
+                referrer: 'no-referrer',
+                body: JSON.stringify(data)
+            })
+                .then(response => response.json())
+        }
+
         function clear() {
             el('board-issues-ul').innerHTML = ''
             el('board-opened-issues').innerHTML = ''
