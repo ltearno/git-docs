@@ -201,8 +201,14 @@ func execCommand(cwd string, name string, args ...string) (*string, interface{})
 	return &content, nil
 }
 
-func commitChanges(gitRepositoryDir string, message string) bool {
-	output, err := execCommand(gitRepositoryDir, "git", "commit", "-am", message)
+func commitChanges(gitRepositoryDir string, message string, committedDir string) bool {
+	output, err := execCommand(gitRepositoryDir, "git", "add", committedDir)
+	if err != nil {
+		fmt.Printf("error staging changes %v\n%s", err, *output)
+		return false
+	}
+
+	output, err = execCommand(gitRepositoryDir, "git", "commit", "-m", message)
 	if err != nil {
 		fmt.Printf("error commit %v\n%s", err, *output)
 		return false
@@ -243,7 +249,7 @@ func (magic *MagicGitRepository) AddIssue(name string) bool {
 		return false
 	}
 
-	ok = commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - added issue %s", name))
+	ok = commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - added issue %s", name), magic.workingDir)
 	if !ok {
 		return false
 	}
