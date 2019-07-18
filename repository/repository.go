@@ -138,6 +138,7 @@ func (magic *MagicGitRepository) GetIssueMetadata(name string) (*IssueMetadata, 
 	return result, nil
 }
 
+// TODO should return false only when .magic-git is unclean, not user's files!
 func isGitRepositoryClean(dir string) bool {
 	cmd := exec.Command("git", "status", "--porcelain")
 	cmd.Dir = dir
