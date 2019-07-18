@@ -171,28 +171,40 @@ func isGitRepositoryClean(dir string) bool {
 	return false
 }
 
-func commitChanges(gitRepositoryDir string, message string) bool {
-	cmd := exec.Command("git", "commit", "-am", message)
-	cmd.Dir = gitRepositoryDir
+func execCommand(cwd string, name string, args ...string) (*string, interface{}) {
+	cmd := exec.Command(name, args...)
+	cmd.Dir = cwd
 
 	out, err := cmd.StdoutPipe()
 	if err != nil {
-		return false
+		return nil, "cannot pipe stdout"
 	}
 
 	err = cmd.Start()
 	if err != nil {
-		return false
+		return nil, "cannot start"
 	}
 
-	content, err := ioutil.ReadAll(out)
+	contentBytes, err := ioutil.ReadAll(out)
 	if err != nil {
-		return false
+		return nil, "cannot read stdout"
 	}
+
+	content := string(contentBytes)
 
 	err = cmd.Wait()
 	if err != nil {
-		fmt.Printf("error commit\n%s", string(content))
+		return &content, "cannot wait"
+	}
+
+	// if commit has been ok, we should be clean
+	return &content, nil
+}
+
+func commitChanges(gitRepositoryDir string, message string) bool {
+	output, err := execCommand(gitRepositoryDir, "git", "commit", "-am", message)
+	if err != nil {
+		fmt.Printf("error commit %v\n%s", err, output)
 		return false
 	}
 
