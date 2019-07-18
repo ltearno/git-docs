@@ -155,7 +155,7 @@ html, body, input, textarea, button {
 }
 
 .badge {
-    background-color: #AB47BC;
+    background-color: black;
     display: inline-block;
     color: white;
     border-radius: 1em;
@@ -163,4 +163,20 @@ html, body, input, textarea, button {
     padding-right: .5em;
     margin-left: .2em;
     margin-right: .2em;
+}
+
+.badge-color-0 {
+    background-color: #AB47BC;
+}
+
+.badge-color-1 {
+    background-color: #1976D2;
+}
+
+.badge-color-2 {
+    background-color: #2E7D32;
+}
+
+.badge-color-3 {
+    background-color: #E65100;
 }

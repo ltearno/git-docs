@@ -34,10 +34,10 @@ func (magic *MagicGitRepository) GitRepositoryDir() string {
 	return magic.gitRepositoryDir
 }
 
-func (magic *MagicGitRepository) Issues() []string {
+func (magic *MagicGitRepository) GetIssues() ([]string, interface{}) {
 	files, err := ioutil.ReadDir(path.Join(magic.workingDir, "issues"))
 	if err != nil {
-		return []string{}
+		return nil, "cannot read dir"
 	}
 
 	var result = []string{}
@@ -48,7 +48,7 @@ func (magic *MagicGitRepository) Issues() []string {
 		}
 	}
 
-	return result
+	return result, nil
 }
 
 func writeFileJson(path string, data interface{}) bool {
@@ -78,6 +78,20 @@ func writeFile(path string, content string) bool {
 	return true
 }
 
+func readFileJson(path string, out interface{}) interface{} {
+	bytes, err := readFile(path)
+	if err != nil {
+		return "error reading file"
+	}
+
+	err = json.Unmarshal(bytes, out)
+	if err != nil {
+		return "error parsing json"
+	}
+
+	return nil
+}
+
 func readFile(path string) ([]byte, interface{}) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -95,6 +109,59 @@ func readFile(path string) ([]byte, interface{}) {
 	fmt.Printf("read from file %s\n%s", path, content)
 
 	return content, nil
+}
+
+func (magic *MagicGitRepository) GetAllTags() ([]string, interface{}) {
+	issues, err := magic.GetIssues()
+	if err != nil {
+		return nil, "cannot get issues"
+	}
+
+	tagSet := map[string]bool{}
+	var result = []string{}
+
+	for _, issue := range issues {
+		metadata, err := magic.GetIssueMetadata(issue)
+		if err != nil {
+			return result, "cannot load one metadata"
+		}
+
+		for _, tag := range metadata.Tags {
+			_, alreadyRegistered := tagSet[tag]
+			if !alreadyRegistered {
+				tagSet[tag] = true
+				result = append(result, tag)
+			}
+		}
+	}
+
+	return result, nil
+}
+
+func (magic *MagicGitRepository) SearchIssues(q string) ([]string, interface{}) {
+	issues, err := magic.GetIssues()
+	if err != nil {
+		return nil, "cannot get issues"
+	}
+
+	q = strings.ToLower(q)
+	var result = []string{}
+
+	for _, issue := range issues {
+		metadata, err := magic.GetIssueMetadata(issue)
+		if err != nil {
+			return result, "cannot load one metadata"
+		}
+
+		for _, tag := range metadata.Tags {
+			if strings.Contains(strings.ToLower(tag), q) {
+				result = append(result, issue)
+				break
+			}
+		}
+	}
+
+	return result, nil
 }
 
 func (magic *MagicGitRepository) getIssuesPath() string {

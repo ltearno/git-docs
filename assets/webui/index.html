@@ -67,6 +67,7 @@
 
             <h1>Issues</h1>
             <div class="mui-panel">
+                <div id='tagsList'></div>
                 <span>
                     <form id='new-issue-form'>
                         - add
@@ -74,6 +75,7 @@
                         <button role="submit" class="mui-btn mui-btn--primary mui-btn--flat">Create issue</button>
                     </form>
                 </span>
+                <label><input id='search-issue' type="text" placeholder="search tags..." /></label>
                 <ul id='board-issues-ul'>
                 </ul>
             </div>
@@ -96,6 +98,27 @@
 
     <script>
         const converter = new showdown.Converter()
+
+        const badgeColorClass = tag => {
+            let c = 0
+            for (let i = 0; i < tag.length; i++) {
+                c += tag.charCodeAt(i) * 5
+            }
+            return `badge-color-${c % 4}`
+        }
+
+        const memoize = f => {
+            const cache = new Map()
+            return arg => {
+                if (cache.has(arg))
+                    return cache.get(arg)
+                let value = f(arg)
+                cache.set(arg, value)
+                return value
+            }
+        }
+
+        const tagToHtmlBadge = memoize(tag => `<div class="badge ${badgeColorClass(tag)}">${tag}</div>`)
 
         const el = document.getElementById.bind(document)
 
@@ -281,7 +304,7 @@
                 .then(response => response.json())
                 .then(metadata => {
                     if (metadata && metadata.tags) {
-                        metadataElement.innerHTML += metadata.tags.map(tag => `<div class="badge">${tag}</div>`).join('')
+                        metadataElement.innerHTML += metadata.tags.map(tagToHtmlBadge).join('')
                     }
                     else {
                         metadataElement.innerHTML += `<pre>${JSON.stringify(metadata, null, 2)}</pre>`
@@ -297,15 +320,24 @@
                 .catch(err => log(`get content for ${name} failed`))
         }
 
-        function loadIssues() {
+        function loadIssues(q = null) {
             let prep = ''
-            fetch("/api/issues")
+            fetch(q == null ? "/api/issues" : `/api/issues?q=${q}`)
                 .then(response => response.json())
                 .then(issues => {
-                    prep += issues.map(name => `<li><span onclick='showIssue("${name}")'>${name}</span><button onclick='deleteIssue("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></li>`).join('')
+                    prep += issues.map(name => `<li><span onclick='showIssue("${name}")'>${name}</span>&nbsp;&nbsp;&nbsp;<button onclick='deleteIssue("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></li>`).join('')
                     el('board-issues-ul').innerHTML = prep
                 })
                 .catch(err => log(`loadIssues failed`))
+
+            if (q == null) {
+                fetch("/api/tags")
+                    .then(response => response.json())
+                    .then(tags => {
+                        el('tagsList').innerHTML = "All tags : " + tags.map(tagToHtmlBadge).join('')
+                    })
+                    .catch(err => log(`loadTags failed`))
+            }
         }
 
         function loadStatus() {
@@ -345,6 +377,10 @@
         }
 
         function installUi() {
+            el('search-issue').addEventListener('input', event => {
+                loadIssues(el('search-issue').value)
+            })
+
             el('new-issue-form').addEventListener('submit', event => {
                 event.preventDefault()
                 event.stopPropagation()

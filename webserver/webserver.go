@@ -138,13 +138,43 @@ func handlerStatusRestAPI(w http.ResponseWriter, r *http.Request, relativePath s
 	jsonResponse(w, 200, response)
 }
 
+func handlerTagsRestAPI(w http.ResponseWriter, r *http.Request, relativePath string, server *WebServer) {
+	if r.Method == http.MethodGet {
+		if relativePath == "" {
+			tags, err := server.magic.GetAllTags()
+			if err != nil {
+				errorResponse(w, 500, "internal error")
+			} else {
+				jsonResponse(w, 200, tags)
+			}
+		} else {
+			errorResponse(w, 404, "not found")
+		}
+	} else {
+		errorResponse(w, 404, "not found")
+	}
+}
+
 func handlerIssuesRestAPI(w http.ResponseWriter, r *http.Request, relativePath string, server *WebServer) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method == http.MethodGet {
 		if relativePath == "" {
-			issues := server.magic.Issues()
-			jsonResponse(w, 200, issues)
+			if r.URL.Query().Get("q") == "" {
+				issues, err := server.magic.GetIssues()
+				if err != nil {
+					errorResponse(w, 500, "internal error")
+				} else {
+					jsonResponse(w, 200, issues)
+				}
+			} else {
+				issues, err := server.magic.SearchIssues(r.URL.Query().Get("q"))
+				if err != nil {
+					errorResponse(w, 500, "internal error")
+				} else {
+					jsonResponse(w, 200, issues)
+				}
+			}
 		} else {
 			if strings.HasSuffix(relativePath, "/metadata") {
 				name := relativePath[0 : len(relativePath)-len("/metadata")]
@@ -267,6 +297,7 @@ func (self *WebServer) Init() {
 	addHandler("/api/issues", handlerIssuesRestAPI, self)
 	addHandler("/api/issues/", handlerIssuesRestAPI, self)
 	addHandler("/api/status", handlerStatusRestAPI, self)
+	addHandler("/api/tags", handlerTagsRestAPI, self)
 }
 
 /* Run runs the Web server... */
