@@ -20,7 +20,7 @@ type MagicGitRepository struct {
 }
 
 type IssueMetadata struct {
-	Flags []string `json:"flags"`
+	Tags []string `json:"tags"`
 }
 
 func NewMagicGitRepository(gitRepositoryDir string) *MagicGitRepository {
@@ -252,7 +252,7 @@ func (magic *MagicGitRepository) AddIssue(name string) bool {
 
 	os.Mkdir(issueDir, 0755)
 
-	ok := writeFileJson(magic.getIssueMetadataFilePath(name), IssueMetadata{Flags: []string{}})
+	ok := writeFileJson(magic.getIssueMetadataFilePath(name), IssueMetadata{Tags: []string{}})
 	if !ok {
 		return false
 	}
