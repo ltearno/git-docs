@@ -86,15 +86,31 @@
         }
 
         function editIssue(name) {
-            el('board-opened-issues').innerHTML = 'edit'
+            el('board-opened-issues').innerHTML = ''
+
+            if (!name)
+                return
+
+            const issueElement = document.createElement('div')
+            issueElement.innerHTML += `<h1>Issue ${name}</h1>`
+            const contentElement = document.createElement('div')
+            contentElement.innerHTML += `<h2>Content</h2>`
+            issueElement.appendChild(contentElement)
+            issueElement.appendChild(elFromHtml(`<button onclick='showIssue("${name}")'>Cancel</button>`))
+
+            el('board-opened-issues').appendChild(issueElement)
+
+            fetch(`/api/issues/${name}/content?interpolated=true`)
+                .then(response => response.text())
+                .then(content => contentElement.innerHTML += `<textarea style='width:80em;height:30em;'>${content}</textarea>`)
+                .catch(err => log(`get content for ${name} failed`))
         }
 
         function showIssue(name) {
             el('board-opened-issues').innerHTML = ''
 
-            if (!name) {
+            if (!name)
                 return
-            }
 
             const issueElement = document.createElement('div')
             issueElement.innerHTML += `<h1>Issue ${name}</h1>`
@@ -104,9 +120,9 @@
             const contentElement = document.createElement('div')
             contentElement.innerHTML += `<h2>Content</h2>`
             issueElement.appendChild(contentElement)
+            issueElement.appendChild(elFromHtml(`<button onclick='editIssue("${name}")'>Edit issue</button>`))
 
             el('board-opened-issues').appendChild(issueElement)
-            el('board-opened-issues').appendChild(elFromHtml(`<button onclick='editIssue("${name}")'>Edit issue</button>`))
 
             fetch(`/api/issues/${name}/metadata`)
                 .then(response => response.json())
