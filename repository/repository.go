@@ -204,7 +204,7 @@ func execCommand(cwd string, name string, args ...string) (*string, interface{})
 func commitChanges(gitRepositoryDir string, message string) bool {
 	output, err := execCommand(gitRepositoryDir, "git", "commit", "-am", message)
 	if err != nil {
-		fmt.Printf("error commit %v\n%s", err, output)
+		fmt.Printf("error commit %v\n%s", err, *output)
 		return false
 	}
 
