@@ -70,14 +70,13 @@
                 <div id='tagsList'></div>
                 <span>
                     <form id='new-issue-form'>
-                        - add
-                        <label><input id='new-issue-name' type="text" placeholder="create an issue..." /></label>
+                        <label>Add issue : <input id='new-issue-name' type="text"
+                                placeholder="create an issue..." /></label>
                         <button role="submit" class="mui-btn mui-btn--primary mui-btn--flat">Create issue</button>
                     </form>
                 </span>
-                <label><input id='search-issue' type="text" placeholder="search tags..." /></label>
-                <ul id='board-issues-ul'>
-                </ul>
+                <label>Search : <input id='search-issue' type="text" placeholder="search tags..." /></label>
+                <div id='board-issues-ul'></div>
             </div>
 
             <h1>Detail zone</h1>
@@ -284,10 +283,12 @@
             issueElement.innerHTML += `<div class='mui--text-dark-secondary mui--text-caption'>${name}</div>`
             const metadataElement = document.createElement('div')
             issueElement.appendChild(metadataElement)
+            issueElement.appendChild(elFromHtml(`<form id='issue-add-tag-form'>Tags: <label><input id='issue-add-tag-text'/></label><button role='submit' class='mui-btn mui-btn--primary mui-btn--flat'>add tag</button></form>`))
+            issueElement.appendChild(elFromHtml('<div class="mui-divider"></div>'))
             const contentElement = document.createElement('div')
             issueElement.appendChild(contentElement)
-            issueElement.appendChild(elFromHtml(`<button onclick='editIssue("${name}")' class="mui-btn mui-btn--primary mui-btn--raised">Edit issue</button>`))
-            issueElement.appendChild(elFromHtml(`<form id='issue-add-tag-form'>Tags: <label><input id='issue-add-tag-text'/></label><button role='submit' class='mui-btn mui-btn--primary mui-btn--flat'>add</button></form>`))
+            issueElement.appendChild(elFromHtml('<div class="mui-divider"></div>'))
+            issueElement.appendChild(elFromHtml(`<button onclick='editIssue("${name}")' class="mui-btn mui-btn--primary mui-btn--flat">Edit issue</button>`))
 
             issueElement.querySelector('#issue-add-tag-form').addEventListener('submit', event => {
                 event.preventDefault()
@@ -325,7 +326,7 @@
             fetch(q == null ? "/api/issues" : `/api/issues?q=${q}`)
                 .then(response => response.json())
                 .then(issues => {
-                    prep += issues.map(name => `<li><span onclick='showIssue("${name}")'>${name}</span>&nbsp;&nbsp;&nbsp;<button onclick='deleteIssue("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></li>`).join('')
+                    prep += issues.map(name => `<div>- <span onclick='showIssue("${name}")'>${name}</span>&nbsp;&nbsp;&nbsp;<button onclick='deleteIssue("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
                     el('board-issues-ul').innerHTML = prep
                 })
                 .catch(err => log(`loadIssues failed`))
@@ -346,8 +347,8 @@
                 .then(status => {
                     el('board-status').innerHTML = `repository: ${status.gitRepository}<br/>`
                     el('board-status').innerHTML += `<span style='color:${status.clean ? 'green' : 'red'};'>${status.clean ? 'ready for operations !' : '.magic-git/... files not synced, commit your changes please'}</span>`
-                    //if (!status.clean)
-                    el('board-status').innerHTML += `<pre>${status.text}</pre>`
+                    if (!status.clean)
+                        el('board-status').innerHTML += `<pre>${status.text}</pre>`
                 })
                 .catch(err => log(`loadStatus failed`))
         }

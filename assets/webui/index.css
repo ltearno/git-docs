@@ -180,3 +180,9 @@ html, body, input, textarea, button {
 .badge-color-3 {
     background-color: #E65100;
 }
+
+.delete.mui-btn {
+    height: 1.5em;
+    line-height: 1.5em;
+    margin: 0;
+}
