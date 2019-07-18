@@ -8,20 +8,19 @@
 </head>
 
 <body>
-    Welcome {{ .Name }}
-
     <h1>Status</h1>
     <div id='board-status'></div>
 
-    <h1>Issues</h1>
+    <div>
+        <h1 style="display: inline">Issues</h1>
+        <span>
+            - add
+            <label><input id='new-issue-name' type="text" placeholder="create an issue..." /></label>
+            <button id='new-issue-button'>Create issue</button>
+        </span>
+    </div>
     <ul id='board-issues-ul'>
     </ul>
-
-    <div>
-        Add an issue<br />
-        <label><input id='new-issue-name' type="text" placeholder="create an issue..." /></label>
-        <button id='new-issue-button'>Create issue</button>
-    </div>
 
     <div id='board-opened-issues'></div>
 
