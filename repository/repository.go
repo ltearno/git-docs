@@ -275,6 +275,30 @@ func (magic *MagicGitRepository) AddIssue(name string) bool {
 	return true
 }
 
+func (magic *MagicGitRepository) DeleteIssue(name string) (bool, interface{}) {
+	if strings.Contains(name, "/") {
+		return false, "'/' is forbidden in names"
+	}
+
+	if !isGitRepositoryClean(magic.gitRepositoryDir) {
+		return false, "git repository is dirty"
+	}
+
+	issueDir := magic.getIssueDirPath(name)
+	if !tools.ExistsFile(issueDir) {
+		return false, "issue does not exists"
+	}
+
+	os.RemoveAll(issueDir)
+
+	ok := commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - deleted issue %s", name), magic.workingDir)
+	if !ok {
+		return false, false
+	}
+
+	return false, true
+}
+
 func (magic *MagicGitRepository) EnsureWorkingSpaceReady() bool {
 	if !tools.ExistsFile(magic.workingDir) {
 		var err = os.Mkdir(magic.workingDir, 0755)

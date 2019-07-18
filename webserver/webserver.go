@@ -168,11 +168,26 @@ func handlerIssuesRestAPI(w http.ResponseWriter, r *http.Request, relativePath s
 				errorResponse(w, 404, "not found, or invalid path")
 			}
 		}
-	} else if relativePath != "" && r.Method == http.MethodPost {
-		if server.magic.AddIssue(relativePath) {
-			messageResponse(w, "issue added")
+	} else if r.Method == http.MethodDelete {
+		if relativePath != "" {
+			result, err := server.magic.DeleteIssue(relativePath)
+			if err != nil {
+				errorResponse(w, 500, "error")
+			} else {
+				messageResponse(w, "issue deleted")
+			}
 		} else {
-			errorResponse(w, 500, "error (maybe already exists ?)")
+			errorResponse(w, 404, "name not specified")
+		}
+	} else if r.Method == http.MethodPost {
+		if relativePath != "" {
+			if server.magic.AddIssue(relativePath) {
+				messageResponse(w, "issue added")
+			} else {
+				errorResponse(w, 500, "error (maybe already exists ?)")
+			}
+		} else {
+			errorResponse(w, 404, "name not specified")
 		}
 	} else {
 		errorResponse(w, 404, "not found")
