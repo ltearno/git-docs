@@ -79,9 +79,20 @@
             el('board-opened-issues').innerHTML = ''
         }
 
+        function editIssue(name) {
+            el('board-opened-issues').innerHTML = 'edit'
+        }
+
+        const elFromHtml = html => {
+            const e = document.createElement('div')
+            e.innerHTML = html
+            return e.children.item(0)
+        }
+
         function showIssue(name) {
+            el('board-opened-issues').innerHTML = ''
+
             if (!name) {
-                el('board-opened-issues').innerHTML = ''
                 return
             }
 
@@ -94,8 +105,8 @@
             contentElement.innerHTML += `<h2>Content</h2>`
             issueElement.appendChild(contentElement)
 
-            el('board-opened-issues').innerHTML = ''
             el('board-opened-issues').appendChild(issueElement)
+            el('board-opened-issues').appendChild(elFromHtml(`<button onclick='editIssue("${name}")'>Edit issue</button>`))
 
             fetch(`/api/issues/${name}/metadata`)
                 .then(response => response.json())
