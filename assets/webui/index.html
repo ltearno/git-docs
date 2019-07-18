@@ -201,6 +201,44 @@
             })
         }
 
+        function addTagToIssue(name, tagToAdd) {
+            // fetch metadata
+            fetch(`/api/issues/${name}/metadata`)
+                .then(response => response.json())
+                .then(metadata => {
+                    let update = false
+
+                    if (!metadata) {
+                        metadata = {}
+                        update = true
+                    }
+
+                    if (!metadata.tags) {
+                        metadata.tags = []
+                        update = true
+                    }
+
+                    if (!metadata.tags.includes(tagToAdd)) {
+                        metadata.tags.push(tagToAdd)
+                        update = true
+                    }
+
+                    if (update) {
+                        // update metadata
+                        putData(`/api/issues/${name}/metadata`, metadata)
+                            .then(_ => {
+                                log(`update issue metadata ${name}`)
+                                reloadWithIssue(name)
+                            })
+                            .catch(err => log(`updateIssue metadata ${name} failed`))
+                    }
+                    else {
+                        log(`tag already present`)
+                    }
+                })
+                .catch(err => log(`get metadata for ${name} failed`))
+        }
+
         function showIssue(name) {
             el('board-opened-issues').innerHTML = ''
 
@@ -208,7 +246,9 @@
                 return
 
             const issueElement = document.createElement('div')
-            issueElement.innerHTML += `<h1>Issue ${name}</h1>`
+            issueElement.innerHTML += `<h1>Issue details</h1>`
+            issueElement.innerHTML += `<div>name: ${name}</div>`
+            issueElement.innerHTML += `<form id='issue-add-tag-form'>Tags: <label><input id='issue-add-tag-text'/></label><button role='submit'>add</button></form>`
             const metadataElement = document.createElement('div')
             metadataElement.innerHTML += `<h2>Metadata</h2>`
             issueElement.appendChild(metadataElement)
@@ -216,6 +256,15 @@
             contentElement.innerHTML += `<h2>Content</h2>`
             issueElement.appendChild(contentElement)
             issueElement.appendChild(elFromHtml(`<button onclick='editIssue("${name}")' class="mui-btn mui-btn--primary mui-btn--raised">Edit issue</button>`))
+
+            issueElement.querySelector('#issue-add-tag-form').addEventListener('submit', event => {
+                event.preventDefault()
+                event.stopPropagation()
+
+                let tag = issueElement.querySelector('#issue-add-tag-text').value
+
+                addTagToIssue(name, tag)
+            })
 
             el('board-opened-issues').appendChild(issueElement)
 
