@@ -72,10 +72,13 @@
         }
 
         function loadIssues() {
-            el('board-issues-ul').innerHTML = ''
+            let prep = ''
             fetch("/api/issues")
                 .then(response => response.json())
-                .then(issues => el('board-issues-ul').innerHTML += issues.map(name => `<li onclick='showIssue("${name}")'>${name}</li>`).join(''))
+                .then(issues => {
+                    prep += issues.map(name => `<li onclick='showIssue("${name}")'>${name}</li>`).join('')
+                    el('board-issues-ul').innerHTML = prep
+                })
         }
 
         function loadStatus() {
