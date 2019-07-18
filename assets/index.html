@@ -14,9 +14,11 @@
     <div>
         <h1 style="display: inline">Issues</h1>
         <span>
-            - add
-            <label><input id='new-issue-name' type="text" placeholder="create an issue..." /></label>
-            <button id='new-issue-button'>Create issue</button>
+            <form id='new-issue-form'>
+                - add
+                <label><input id='new-issue-name' type="text" placeholder="create an issue..." /></label>
+                <button role="submit">Create issue</button>
+            </form>
         </span>
     </div>
     <ul id='board-issues-ul'>
@@ -24,8 +26,18 @@
 
     <div id='board-opened-issues'></div>
 
+    <div id="log"></div>
+
     <script>
         const el = document.getElementById.bind(document)
+
+        let logMessages = []
+        const log = msg => {
+            logMessages.push(msg)
+            if (logMessages.length > 10)
+                logMessages = logMessages.slice(0, 10)
+            el('log').innerHTML = logMessages.map(msg => `<div>${msg}</div>`).join('')
+        }
 
         function postData(url = '', data = {}) {
             return fetch(url, {
@@ -41,7 +53,8 @@
                 referrer: 'no-referrer', // no-referrer, *client
                 body: JSON.stringify(data), // body data type must match "Content-Type" header
             })
-                .then(response => response.json()); // parses JSON response into native JavaScript objects 
+                .then(response => response.json())
+                .catch(err => log(`post to ${url} failed`))
         }
 
         function deleteData(url = '', data = {}) {
@@ -58,6 +71,7 @@
                 body: JSON.stringify(data)
             })
                 .then(response => response.json())
+                .catch(err => log(`delete to ${url} failed`))
         }
 
         function clear() {
@@ -86,10 +100,12 @@
             fetch(`/api/issues/${name}/metadata`)
                 .then(response => response.json())
                 .then(metadata => metadataElement.innerHTML += `<pre>${JSON.stringify(metadata, null, 2)}</pre>`)
+                .catch(err => log(`get metadata for ${name} failed`))
 
             fetch(`/api/issues/${name}/content?interpolated=true`)
                 .then(response => response.text())
                 .then(content => contentElement.innerHTML += `<pre>${content}</pre>`)
+                .catch(err => log(`get content for ${name} failed`))
         }
 
         function loadIssues() {
@@ -100,6 +116,7 @@
                     prep += issues.map(name => `<li><button class='delete' onclick='deleteIssue("${name}")'>X</button> <span onclick='showIssue("${name}")'>${name}</span></li>`).join('')
                     el('board-issues-ul').innerHTML = prep
                 })
+                .catch(err => log(`loadIssues failed`))
         }
 
         function loadStatus() {
@@ -111,6 +128,7 @@
                     if (!status.clean)
                         el('board-status').innerHTML += `<pre>${status.text}</pre>`
                 })
+                .catch(err => log(`loadStatus failed`))
         }
 
         function reloadWithIssue(issue) {
@@ -124,6 +142,7 @@
                 .then(_ => {
                     reloadWithIssue(null)
                 })
+                .catch(err => log(`deleteIssue ${name} failed`))
         }
 
         function addIssue(name) {
@@ -131,9 +150,13 @@
                 .then(_ => {
                     reloadWithIssue(name)
                 })
+                .catch(err => log(`addIssue ${name} failed`))
         }
 
-        el('new-issue-button').addEventListener('click', () => {
+        el('new-issue-form').addEventListener('submit', event => {
+            event.preventDefault()
+            event.stopPropagation()
+
             let name = el('new-issue-name').value
 
             addIssue(name)
