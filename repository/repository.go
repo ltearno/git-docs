@@ -157,8 +157,20 @@ func isGitRepositoryClean(dir string) bool {
 		return false
 	}
 
-	content, err := ioutil.ReadAll(out)
-	if err != nil {
+	scanner := bufio.NewScanner(out)
+	scanner.Split(bufio.ScanLines)
+
+	clean := true
+
+	for scanner.Scan() {
+		file := scanner.Text()[3:]
+		if strings.HasPrefix(file, ".magic-git") || strings.HasPrefix(file, "\".magic-git") {
+			clean = false
+			fmt.Printf("%s is not clean", file)
+		}
+	}
+
+	if !clean {
 		return false
 	}
 
@@ -167,13 +179,7 @@ func isGitRepositoryClean(dir string) bool {
 		return false
 	}
 
-	if string(content) == "" {
-		return true
-	}
-
-	fmt.Printf("git repository is not clean !")
-
-	return false
+	return true
 }
 
 func execCommand(cwd string, name string, args ...string) (*string, interface{}) {
