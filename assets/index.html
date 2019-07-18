@@ -97,7 +97,7 @@
             fetch("/api/issues")
                 .then(response => response.json())
                 .then(issues => {
-                    prep += issues.map(name => `<li><span onclick='showIssue("${name}")'>${name}</span><button class='delete' onclick='deleteIssue("${name}")'>X</button></li>`).join('')
+                    prep += issues.map(name => `<li><button class='delete' onclick='deleteIssue("${name}")'>X</button> <span onclick='showIssue("${name}")'>${name}</span></li>`).join('')
                     el('board-issues-ul').innerHTML = prep
                 })
         }
