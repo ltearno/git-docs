@@ -158,6 +158,7 @@
             event.stopPropagation()
 
             let name = el('new-issue-name').value
+            el('new-issue-name').value = ''
 
             addIssue(name)
         })
