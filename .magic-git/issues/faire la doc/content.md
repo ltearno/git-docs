@@ -19,6 +19,11 @@ C'est un problèmem de fond !
 >f
 >e
 
+[foo]: /url1
+[foo]: /url2
+
+[foo][]
+
 ## Summary
 
 ## Details
