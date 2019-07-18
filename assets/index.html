@@ -80,7 +80,8 @@
             fetch("/api/status")
                 .then(response => response.json())
                 .then(status => {
-                    el('board-status').innerHTML = `<span style='color:${status.clean ? 'green' : 'red'};'>${status.clean ? 'CLEAN' : 'DIRTY'}</span>`
+                    el('board-status').innerHTML = `repository: ${status.gitRepository}<br/>`
+                    el('board-status').innerHTML += `<span style='color:${status.clean ? 'green' : 'red'};'>${status.clean ? 'CLEAN' : 'DIRTY'}</span>`
                     if (!status.clean)
                         el('board-status').innerHTML += `<pre>${status.text}</pre>`
                 })

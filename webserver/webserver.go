@@ -102,8 +102,9 @@ func httpResponse(w http.ResponseWriter, code int, body string) {
 }
 
 type StatusResponse struct {
-	Clean bool   `json:"clean"`
-	Text  string `json:"text"`
+	Clean         bool   `json:"clean"`
+	Text          string `json:"text"`
+	GitRepository string `json:"gitRepository"`
 }
 
 func handlerStatusRestAPI(w http.ResponseWriter, r *http.Request, relativePath string, server *WebServer) {
@@ -118,8 +119,9 @@ func handlerStatusRestAPI(w http.ResponseWriter, r *http.Request, relativePath s
 	}
 
 	response := StatusResponse{
-		Clean: clean,
-		Text:  *status,
+		Clean:         clean,
+		Text:          *status,
+		GitRepository: server.magic.GitRepositoryDir(),
 	}
 
 	jsonResponse(w, 200, response)

@@ -30,6 +30,10 @@ func NewMagicGitRepository(gitRepositoryDir string) *MagicGitRepository {
 	}
 }
 
+func (magic *MagicGitRepository) GitRepositoryDir() string {
+	return magic.gitRepositoryDir
+}
+
 func (magic *MagicGitRepository) Issues() []string {
 	files, err := ioutil.ReadDir(path.Join(magic.workingDir, "issues"))
 	if err != nil {
