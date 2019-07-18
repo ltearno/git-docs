@@ -101,6 +101,16 @@ func httpResponse(w http.ResponseWriter, code int, body string) {
 	w.Write([]byte(body))
 }
 
+func handlerStatusRestAPI(w http.ResponseWriter, r *http.Request, relativePath string, server *WebServer) {
+	status, err := server.magic.GetStatus()
+	if err != nil {
+		errorResponse(w, 500, "internal error")
+	}
+
+	w.Header().Set("Content-Type", "text/plain")
+	httpResponse(w, 200, *status)
+}
+
 func handlerIssuesRestAPI(w http.ResponseWriter, r *http.Request, relativePath string, server *WebServer) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -172,6 +182,7 @@ func (self *WebServer) Init() {
 	addHandler("/webui/", handler, self)
 	addHandler("/api/issues", handlerIssuesRestAPI, self)
 	addHandler("/api/issues/", handlerIssuesRestAPI, self)
+	addHandler("/api/status", handlerStatusRestAPI, self)
 }
 
 /* Run runs the Web server... */

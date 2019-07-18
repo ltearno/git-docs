@@ -219,6 +219,15 @@ func commitChanges(gitRepositoryDir string, message string, committedDir string)
 	return isGitRepositoryClean(gitRepositoryDir)
 }
 
+func (magic *MagicGitRepository) GetStatus() (*string, interface{}) {
+	output, err := execCommand(magic.gitRepositoryDir, "git", "status")
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, output
+}
+
 func (magic *MagicGitRepository) AddIssue(name string) bool {
 	if strings.Contains(name, "/") {
 		return false
