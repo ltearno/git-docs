@@ -18,3 +18,6 @@ build-docker:
 
 run-serve-docker:
 	docker run -it --rm -v "$(shell pwd)":/usr/src/myapp -w /usr/src/myapp --user $(shell id -u):$(shell id -g) magic-git serve
+
+run-docker-interactive:
+	docker run -it --rm -v "$(shell pwd)":/usr/src/myapp -w /usr/src/myapp --user $(shell id -u):$(shell id -g) --entrypoint sh magic-git
