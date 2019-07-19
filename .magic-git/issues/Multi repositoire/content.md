@@ -1,6 +1,6 @@
 # {{ .Issue.Name }}
 
-- [x] kjhg
+- [x] jhgfjh tetetet
 - [ ] toto
 
 un ajout
