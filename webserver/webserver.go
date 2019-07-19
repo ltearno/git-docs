@@ -300,6 +300,7 @@ func (self *WebServer) Init() {
 		return
 	}
 
+	// TODO : use httprouter instead of this :
 	addHandler("/webui/", handlerWebUi, self)
 	addHandler("/api/issues", handlerIssuesRestAPI, self)
 	addHandler("/api/issues/", handlerIssuesRestAPI, self)
