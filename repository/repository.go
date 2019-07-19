@@ -363,6 +363,38 @@ func (magic *MagicGitRepository) GetStatus() (*string, interface{}) {
 	return output, nil
 }
 
+func (magic *MagicGitRepository) RenameIssue(name string, newName string) bool {
+	if strings.Contains(name, "/") {
+		return false
+	}
+
+	if !isGitRepositoryClean(magic.gitRepositoryDir) {
+		return false
+	}
+
+	issueDir := magic.getIssueDirPath(name)
+	if !tools.ExistsFile(issueDir) {
+		return false
+	}
+
+	newIssueDir := magic.getIssueDirPath(newName)
+	if tools.ExistsFile(newIssueDir) {
+		return false
+	}
+
+	err := os.Rename(issueDir, newIssueDir)
+	if err != nil {
+		return false
+	}
+
+	ok := commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - renamed issue %s to %s", name, newIssueDir), magic.workingDir)
+	if !ok {
+		return false
+	}
+
+	return true
+}
+
 func (magic *MagicGitRepository) AddIssue(name string) bool {
 	if strings.Contains(name, "/") {
 		return false

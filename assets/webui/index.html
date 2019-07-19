@@ -205,7 +205,7 @@
 
             const issueElement = document.createElement('div')
             issueElement.classList.add('mui-panel')
-            issueElement.innerHTML += `<h1>${name}</h1>`
+            issueElement.innerHTML += `<input id='name-input' type='text' style='font-size:2em;'/></input>`
             const contentElement = document.createElement('div')
             contentElement.innerHTML += `<h2>Content</h2>`
             issueElement.appendChild(contentElement)
@@ -214,6 +214,8 @@
 
             el('board-opened-issues').appendChild(issueElement)
 
+            issueElement.querySelector('#name-input').value = name
+
             fetch(`/api/issues/${name}/content`)
                 .then(response => response.text())
                 .then(content => contentElement.innerHTML += `<textarea class='issue-content-textarea' style='width:80em;height:30em;'>${content}</textarea>`)
@@ -221,19 +223,38 @@
 
             let validateButton = issueElement.getElementsByClassName('validate-edit').item(0)
             validateButton.addEventListener('click', () => {
-                let textArea = issueElement.getElementsByClassName('issue-content-textarea').item(0)
-
-                putData(`/api/issues/${name}/content`, textArea.value)
-                    .then(_ => {
-                        log(`update issue ${name}`)
+                let waitCount = 2
+                const maybeReload = name => {
+                    waitCount--
+                    if (!waitCount)
                         reloadWithIssue(name)
-                    })
-                    .catch(err => log(`editIssue ${name} failed`))
+                }
+
+                const newName = issueElement.querySelector('#name-input').value
+                if (newName != name)
+                    postData(`/api/issues/${name}/rename`, { name: newName })
+                        .then(_ => {
+                            log(`renamed issue ${name}`)
+                            maybeReload(newName)
+                        })
+                        .catch(err => log(`rename ${name} failed`))
+
+                const newContent = issueElement.getElementsByClassName('issue-content-textarea').item(0).value
+                if (newContent) {
+                    putData(`/api/issues/${name}/content`, newContent)
+                        .then(_ => {
+                            log(`updated issue ${name} content`)
+                            maybeReload(newName)
+                        })
+                        .catch(err => log(`editIssue ${name} failed`))
+                }
+                else {
+                    log(`no change to content`)
+                }
             })
         }
 
         function addTagToIssue(name, tagToAdd) {
-            // fetch metadata
             fetch(`/api/issues/${name}/metadata`)
                 .then(response => response.json())
                 .then(metadata => {
@@ -278,7 +299,7 @@
 
             const issueElement = document.createElement('div')
             issueElement.classList.add('mui-panel')
-            issueElement.innerHTML += `<div class='mui--text-dark-secondary mui--text-caption'>${name}</div>`
+            issueElement.innerHTML += `<div class='mui--text-dark-secondary mui--text-caption' style='padding-top:1em;padding-bottom:1.7em;'>${name}</div>`
             const metadataElement = document.createElement('div')
             issueElement.appendChild(metadataElement)
             issueElement.appendChild(elFromHtml(`<form id='issue-add-tag-form'>Tags: <label><input id='issue-add-tag-text'/></label><button role='submit' class='mui-btn mui-btn--primary mui-btn--flat'>add tag</button></form>`))

@@ -30,6 +30,10 @@ type WebServer struct {
 	magic *repository.MagicGitRepository
 }
 
+type RenameIssueRequest struct {
+	Name string `json:"name"`
+}
+
 func interpolate(name string, templateContent string, context interface{}) *string {
 	t, err := template.New(name).Parse(templateContent)
 	if err != nil {
@@ -175,9 +179,6 @@ func handlerGetIssues(w http.ResponseWriter, r *http.Request, p httprouter.Param
 
 func handlerGetIssueMetadata(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
 	name := p.ByName("issue_name")
-	if strings.HasPrefix(name, "/") {
-		name = name[1:]
-	}
 
 	metadata, err := server.magic.GetIssueMetadata(name)
 	if err != nil {
@@ -189,9 +190,6 @@ func handlerGetIssueMetadata(w http.ResponseWriter, r *http.Request, p httproute
 
 func handlerGetIssueContent(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
 	name := p.ByName("issue_name")
-	if strings.HasPrefix(name, "/") {
-		name = name[1:]
-	}
 
 	content, err := server.magic.GetIssueContent(name)
 	if err != nil {
@@ -215,12 +213,9 @@ func handlerGetIssueContent(w http.ResponseWriter, r *http.Request, p httprouter
 }
 
 func handlerDeleteIssue(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
-	relativePath := p.ByName("issue_name")
-	if strings.HasPrefix(relativePath, "/") {
-		relativePath = relativePath[1:]
-	}
+	name := p.ByName("issue_name")
 
-	result, err := server.magic.DeleteIssue(relativePath)
+	result, err := server.magic.DeleteIssue(name)
 	if err != nil {
 		errorResponse(w, 500, fmt.Sprintf("delete error : %v", err))
 	} else {
@@ -230,9 +225,6 @@ func handlerDeleteIssue(w http.ResponseWriter, r *http.Request, p httprouter.Par
 
 func handlerPostIssue(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
 	name := p.ByName("issue_name")
-	if strings.HasPrefix(name, "/") {
-		name = name[1:]
-	}
 
 	if server.magic.AddIssue(name) {
 		messageResponse(w, "issue added")
@@ -241,11 +233,31 @@ func handlerPostIssue(w http.ResponseWriter, r *http.Request, p httprouter.Param
 	}
 }
 
+func handlerPostIssueRename(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	name := p.ByName("issue_name")
+
+	out, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		errorResponse(w, 400, "error in body")
+	} else {
+		request := &RenameIssueRequest{}
+
+		err = json.Unmarshal(out, request)
+		if err != nil {
+			errorResponse(w, 400, "error malformatted json")
+		} else {
+			if server.magic.RenameIssue(name, request.Name) {
+				messageResponse(w, "issue renamed")
+			} else {
+				errorResponse(w, 500, "error")
+			}
+		}
+
+	}
+}
+
 func handlerPutIssueMetadata(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
 	name := p.ByName("issue_name")
-	if strings.HasPrefix(name, "/") {
-		name = name[1:]
-	}
 
 	out, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -270,9 +282,6 @@ func handlerPutIssueMetadata(w http.ResponseWriter, r *http.Request, p httproute
 
 func handlerPutIssueContent(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
 	name := p.ByName("issue_name")
-	if strings.HasPrefix(name, "/") {
-		name = name[1:]
-	}
 
 	out, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -316,6 +325,7 @@ func (self *WebServer) Init(router *httprouter.Router) {
 	router.GET("/api/issues/:issue_name/metadata", makeHandle(handlerGetIssueMetadata, self))
 	router.GET("/api/issues/:issue_name/content", makeHandle(handlerGetIssueContent, self))
 	router.POST("/api/issues/:issue_name", makeHandle(handlerPostIssue, self))
+	router.POST("/api/issues/:issue_name/rename", makeHandle(handlerPostIssueRename, self))
 	router.PUT("/api/issues/:issue_name/metadata", makeHandle(handlerPutIssueMetadata, self))
 	router.PUT("/api/issues/:issue_name/content", makeHandle(handlerPutIssueContent, self))
 	router.DELETE("/api/issues/:issue_name", makeHandle(handlerDeleteIssue, self))
