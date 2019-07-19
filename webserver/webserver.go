@@ -155,125 +155,135 @@ func handlerTagsRestAPI(w http.ResponseWriter, r *http.Request, p httprouter.Par
 	}
 }
 
-func handlerIssuesRestAPI(w http.ResponseWriter, r *http.Request, relativePath string, server *WebServer) {
-	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method == http.MethodGet {
-		if relativePath == "" {
-			if r.URL.Query().Get("q") == "" {
-				issues, err := server.magic.GetIssues()
-				if err != nil {
-					errorResponse(w, 500, "internal error")
-				} else {
-					jsonResponse(w, 200, issues)
-				}
-			} else {
-				issues, err := server.magic.SearchIssues(r.URL.Query().Get("q"))
-				if err != nil {
-					errorResponse(w, 500, "internal error")
-				} else {
-					jsonResponse(w, 200, issues)
-				}
-			}
+func handlerGetIssues(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	if r.URL.Query().Get("q") == "" {
+		issues, err := server.magic.GetIssues()
+		if err != nil {
+			errorResponse(w, 500, "internal error")
 		} else {
-			if strings.HasSuffix(relativePath, "/metadata") {
-				name := relativePath[0 : len(relativePath)-len("/metadata")]
-				metadata, err := server.magic.GetIssueMetadata(name)
-				if err != nil {
-					errorResponse(w, 404, "not found metadata")
-				} else {
-					jsonResponse(w, 200, metadata)
-				}
-			} else if strings.HasSuffix(relativePath, "/content") {
-				name := relativePath[0 : len(relativePath)-len("/content")]
-				content, err := server.magic.GetIssueContent(name)
-				if err != nil {
-					errorResponse(w, 404, "not found content")
-				} else {
-					w.Header().Set("Content-Type", "text/markdown")
-					if r.URL.Query().Get("interpolated") == "true" {
-						context := &IssueContext{}
-						context.Issue.Name = name
-
-						interpolated := interpolate(name, *content, context)
-						if interpolated != nil {
-							httpResponse(w, 200, *interpolated)
-						} else {
-							errorResponse(w, 500, "cannot interpolate")
-						}
-					} else {
-						httpResponse(w, 200, *content)
-					}
-				}
-			} else {
-				errorResponse(w, 404, "not found, or invalid path")
-			}
-		}
-	} else if r.Method == http.MethodDelete {
-		if relativePath != "" {
-			result, err := server.magic.DeleteIssue(relativePath)
-			if err != nil {
-				errorResponse(w, 500, fmt.Sprintf("delete error : %v", err))
-			} else {
-				jsonResponse(w, 200, map[string]bool{"deleted": result})
-			}
-		} else {
-			errorResponse(w, 404, "name not specified")
-		}
-	} else if r.Method == http.MethodPost {
-		if relativePath != "" {
-			if server.magic.AddIssue(relativePath) {
-				messageResponse(w, "issue added")
-			} else {
-				errorResponse(w, 500, "error (maybe already exists ?)")
-			}
-		} else {
-			errorResponse(w, 404, "name not specified")
-		}
-	} else if r.Method == http.MethodPut {
-		if relativePath != "" {
-			if strings.HasSuffix(relativePath, "/content") {
-				name := relativePath[0 : len(relativePath)-len("/content")]
-				out, err := ioutil.ReadAll(r.Body)
-				if err != nil {
-					errorResponse(w, 400, "error in body")
-				} else {
-					ok, err := server.magic.SetIssueContent(name, string(out))
-					if err != nil || !ok {
-						errorResponse(w, 400, "error setting content")
-					} else {
-						messageResponse(w, "issue metadata updated")
-					}
-				}
-			} else if strings.HasSuffix(relativePath, "/metadata") {
-				name := relativePath[0 : len(relativePath)-len("/metadata")]
-				out, err := ioutil.ReadAll(r.Body)
-				if err != nil {
-					errorResponse(w, 400, "error in body")
-				} else {
-					metadata := &repository.IssueMetadata{}
-
-					err = json.Unmarshal(out, metadata)
-					if err != nil {
-						errorResponse(w, 400, "error malformatted json")
-					} else {
-						ok, err := server.magic.SetIssueMetadata(name, metadata)
-						if err != nil || !ok {
-							errorResponse(w, 400, "error setting metadata")
-						} else {
-							messageResponse(w, "issue metadata updated")
-						}
-					}
-
-				}
-			} else {
-				errorResponse(w, 400, "error in path")
-			}
-		} else {
-			errorResponse(w, 404, "name not specified")
+			jsonResponse(w, 200, issues)
 		}
 	} else {
-		errorResponse(w, 404, "not found")
+		issues, err := server.magic.SearchIssues(r.URL.Query().Get("q"))
+		if err != nil {
+			errorResponse(w, 500, "internal error")
+		} else {
+			jsonResponse(w, 200, issues)
+		}
+	}
+}
+
+func handlerGetIssueMetadata(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	name := p.ByName("issue_name")
+	if strings.HasPrefix(name, "/") {
+		name = name[1:]
+	}
+
+	metadata, err := server.magic.GetIssueMetadata(name)
+	if err != nil {
+		errorResponse(w, 404, "not found metadata")
+	} else {
+		jsonResponse(w, 200, metadata)
+	}
+}
+
+func handlerGetIssueContent(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	name := p.ByName("issue_name")
+	if strings.HasPrefix(name, "/") {
+		name = name[1:]
+	}
+
+	content, err := server.magic.GetIssueContent(name)
+	if err != nil {
+		errorResponse(w, 404, "not found content")
+	} else {
+		w.Header().Set("Content-Type", "text/markdown")
+		if r.URL.Query().Get("interpolated") == "true" {
+			context := &IssueContext{}
+			context.Issue.Name = name
+
+			interpolated := interpolate(name, *content, context)
+			if interpolated != nil {
+				httpResponse(w, 200, *interpolated)
+			} else {
+				errorResponse(w, 500, "cannot interpolate")
+			}
+		} else {
+			httpResponse(w, 200, *content)
+		}
+	}
+}
+
+func handlerDeleteIssue(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	relativePath := p.ByName("issue_name")
+	if strings.HasPrefix(relativePath, "/") {
+		relativePath = relativePath[1:]
+	}
+
+	result, err := server.magic.DeleteIssue(relativePath)
+	if err != nil {
+		errorResponse(w, 500, fmt.Sprintf("delete error : %v", err))
+	} else {
+		jsonResponse(w, 200, map[string]bool{"deleted": result})
+	}
+}
+
+func handlerPostIssue(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	name := p.ByName("issue_name")
+	if strings.HasPrefix(name, "/") {
+		name = name[1:]
+	}
+
+	if server.magic.AddIssue(name) {
+		messageResponse(w, "issue added")
+	} else {
+		errorResponse(w, 500, "error (maybe already exists ?)")
+	}
+}
+
+func handlerPutIssueMetadata(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	name := p.ByName("issue_name")
+	if strings.HasPrefix(name, "/") {
+		name = name[1:]
+	}
+
+	out, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		errorResponse(w, 400, "error in body")
+	} else {
+		metadata := &repository.IssueMetadata{}
+
+		err = json.Unmarshal(out, metadata)
+		if err != nil {
+			errorResponse(w, 400, "error malformatted json")
+		} else {
+			ok, err := server.magic.SetIssueMetadata(name, metadata)
+			if err != nil || !ok {
+				errorResponse(w, 400, "error setting metadata")
+			} else {
+				messageResponse(w, "issue metadata updated")
+			}
+		}
+
+	}
+}
+
+func handlerPutIssueContent(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	name := p.ByName("issue_name")
+	if strings.HasPrefix(name, "/") {
+		name = name[1:]
+	}
+
+	out, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		errorResponse(w, 400, "error in body")
+	} else {
+		ok, err := server.magic.SetIssueContent(name, string(out))
+		if err != nil || !ok {
+			errorResponse(w, 400, "error setting content")
+		} else {
+			messageResponse(w, "issue metadata updated")
+		}
 	}
 }
 
@@ -302,8 +312,13 @@ func (self *WebServer) Init(router *httprouter.Router) {
 	router.GET("/webui/*requested_resource", makeHandle(handlerWebUi, self))
 	router.GET("/api/status", makeHandle(handlerStatusRestAPI, self))
 	router.GET("/api/tags", makeHandle(handlerTagsRestAPI, self))
-	/*addHandler("/api/issues/", handlerIssuesRestAPI, self)
-	 */
+	router.GET("/api/issues", makeHandle(handlerGetIssues, self))
+	router.GET("/api/issues/:issue_name/metadata", makeHandle(handlerGetIssueMetadata, self))
+	router.GET("/api/issues/:issue_name/content", makeHandle(handlerGetIssueContent, self))
+	router.POST("/api/issues/:issue_name", makeHandle(handlerPostIssue, self))
+	router.PUT("/api/issues/:issue_name/metadata", makeHandle(handlerPutIssueMetadata, self))
+	router.PUT("/api/issues/:issue_name/content", makeHandle(handlerPutIssueContent, self))
+	router.DELETE("/api/issues/:issue_name", makeHandle(handlerDeleteIssue, self))
 }
 
 /* Run runs the Web server... */

@@ -321,7 +321,7 @@
 
         function loadIssues(q = null) {
             let prep = ''
-            fetch(q == null ? "/api/issues" : `/api/issues?q=${q}`)
+            fetch(q == null ? "/api/issues" : `/api/issues/?q=${q}`)
                 .then(response => response.json())
                 .then(issues => {
                     prep += issues.map(name => `<div>- <span onclick='showIssue("${name}")'>${name}</span>&nbsp;&nbsp;&nbsp;<button onclick='deleteIssue("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
