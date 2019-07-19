@@ -50,35 +50,41 @@ func interpolate(name string, templateContent string, context interface{}) *stri
 	return &result
 }
 
-func handlerWebUi(w http.ResponseWriter, r *http.Request, relativePath string, server *WebServer) {
+func handlerWebUi(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	relativePath := p.ByName("requested_resource")
+	if strings.HasPrefix(relativePath, "/") {
+		relativePath = relativePath[1:]
+	}
+
 	rawContentBytes, err := assetsgen.Asset("assets/webui/" + relativePath)
 	if err != nil {
 		errorResponse(w, 404, fmt.Sprintf("not found '%s'", relativePath))
-	} else {
-		content := string(rawContentBytes)
-		contentType := "application/octet-stream"
+		return
+	}
 
-		if strings.HasSuffix(relativePath, ".md") {
-			context := &PageContext{
-				Name: "First context member",
-			}
+	content := string(rawContentBytes)
+	contentType := "application/octet-stream"
 
-			contentType = "application/markdown"
-			interpolated := interpolate(relativePath, content, context)
-			if interpolated != nil {
-				content = *interpolated
-			}
-		} else if strings.HasSuffix(relativePath, ".css") {
-			contentType = "text/css"
-		} else if strings.HasSuffix(relativePath, ".js") {
-			contentType = "application/javascript"
-		} else if strings.HasSuffix(relativePath, ".html") {
-			contentType = "text/html"
+	if strings.HasSuffix(relativePath, ".md") {
+		context := &PageContext{
+			Name: "First context member",
 		}
 
-		w.Header().Set("Content-Type", contentType)
-		httpResponse(w, 200, content)
+		contentType = "application/markdown"
+		interpolated := interpolate(relativePath, content, context)
+		if interpolated != nil {
+			content = *interpolated
+		}
+	} else if strings.HasSuffix(relativePath, ".css") {
+		contentType = "text/css"
+	} else if strings.HasSuffix(relativePath, ".js") {
+		contentType = "application/javascript"
+	} else if strings.HasSuffix(relativePath, ".html") {
+		contentType = "text/html"
 	}
+
+	w.Header().Set("Content-Type", contentType)
+	httpResponse(w, 200, content)
 }
 
 type ErrorResponse struct {
@@ -120,7 +126,7 @@ type StatusResponse struct {
 	GitRepository string `json:"gitRepository"`
 }
 
-func handlerStatusRestAPI(w http.ResponseWriter, r *http.Request, relativePath string, server *WebServer) {
+func handlerStatusRestAPI(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
 	status, err := server.magic.GetStatus()
 	if err != nil {
 		errorResponse(w, 500, "internal error")
@@ -140,20 +146,12 @@ func handlerStatusRestAPI(w http.ResponseWriter, r *http.Request, relativePath s
 	jsonResponse(w, 200, response)
 }
 
-func handlerTagsRestAPI(w http.ResponseWriter, r *http.Request, relativePath string, server *WebServer) {
-	if r.Method == http.MethodGet {
-		if relativePath == "" {
-			tags, err := server.magic.GetAllTags()
-			if err != nil {
-				errorResponse(w, 500, "internal error")
-			} else {
-				jsonResponse(w, 200, tags)
-			}
-		} else {
-			errorResponse(w, 404, "not found")
-		}
+func handlerTagsRestAPI(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	tags, err := server.magic.GetAllTags()
+	if err != nil {
+		errorResponse(w, 500, "internal error")
 	} else {
-		errorResponse(w, 404, "not found")
+		jsonResponse(w, 200, tags)
 	}
 }
 
@@ -294,26 +292,31 @@ func NewWebServer(magic *repository.MagicGitRepository) *WebServer {
 	}
 }
 
-func (self *WebServer) Init() {
-	router := httprouter.New()
-	if router == nil {
-		return
+func makeHandle(handle func(http.ResponseWriter, *http.Request, httprouter.Params, *WebServer), server *WebServer) func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		handle(w, r, p, server)
 	}
+}
 
-	// TODO : use httprouter instead of this :
-	addHandler("/webui/", handlerWebUi, self)
-	addHandler("/api/issues", handlerIssuesRestAPI, self)
-	addHandler("/api/issues/", handlerIssuesRestAPI, self)
-	addHandler("/api/status", handlerStatusRestAPI, self)
-	addHandler("/api/tags", handlerTagsRestAPI, self)
+func (self *WebServer) Init(router *httprouter.Router) {
+	router.GET("/webui/*requested_resource", makeHandle(handlerWebUi, self))
+	router.GET("/api/status", makeHandle(handlerStatusRestAPI, self))
+	router.GET("/api/tags", makeHandle(handlerTagsRestAPI, self))
+	/*addHandler("/api/issues/", handlerIssuesRestAPI, self)
+	 */
 }
 
 /* Run runs the Web server... */
 func Run(magic *repository.MagicGitRepository) {
 	fmt.Println("starting web server")
 
-	server := NewWebServer(magic)
-	server.Init()
+	router := httprouter.New()
+	if router == nil {
+		fmt.Printf("Failed to instantiate the router, exit\n")
+	}
 
-	log.Fatal(http.ListenAndServe("127.0.0.1:8080", nil))
+	server := NewWebServer(magic)
+	server.Init(router)
+
+	log.Fatal(http.ListenAndServe("127.0.0.1:8080", router))
 }
