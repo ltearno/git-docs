@@ -2,6 +2,7 @@
 
 build-prepare:
 	go get -u github.com/jteeuwen/go-bindata/...
+	go get github.com/julienschmidt/httprouter
 
 build-embed-assets:
 	go-bindata -o assetsgen/assets.go -pkg assetsgen assets/...

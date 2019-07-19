@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/julienschmidt/httprouter"
+
 	"../assetsgen"
 	"../repository"
 )
@@ -293,6 +295,11 @@ func NewWebServer(magic *repository.MagicGitRepository) *WebServer {
 }
 
 func (self *WebServer) Init() {
+	router := httprouter.New()
+	if router == nil {
+		return
+	}
+
 	addHandler("/webui/", handlerWebUi, self)
 	addHandler("/api/issues", handlerIssuesRestAPI, self)
 	addHandler("/api/issues/", handlerIssuesRestAPI, self)
