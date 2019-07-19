@@ -1,7 +1,7 @@
 # {{ .Issue.Name }}
 
 - [x] kjhg
-- [] toto
+- [ ] toto
 
 un ajout
 
