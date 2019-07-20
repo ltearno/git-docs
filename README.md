@@ -1,7 +1,7 @@
 # Git Docs
 
 Make git tools working offline :
-- issue management,
+- document management, (issues, documentation, adr, ...)
 - ...
 
 Git Docs is a little tool (web server rest + ui, and a cli) to manage your project's task event offline.
@@ -27,7 +27,7 @@ Plugins:
 - Trigger CI build...
 - actions de flow habituel : wip last, new feat, ...
 
-obtenir un lien vers l'issue dans le presse-papier pour pouvoir le coller dans les commits. ce lien sera compatible avec le "moteur de recherche" pour indexation
+obtenir un lien vers le document dans le presse-papier pour pouvoir le coller dans les commits. ce lien sera compatible avec le "moteur de recherche" pour indexation
 
 syntaxe dans les markdowns pour avoir des données avec sémantique (champs boolean, etc) => pour indexation...
 
@@ -35,4 +35,4 @@ syntaxe dans les markdowns pour avoir des données avec sémantique (champs bool
 
 TODO : ui par défaut sur branche courante mais sélecteur pour changer de branche
 
-TODO : historique d'une issue, grâce à git log...
+TODO : historique d'une document, grâce à git log...

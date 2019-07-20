@@ -70,23 +70,23 @@
                 <div style='padding-bottom:1em;'>
                     <div id='tagsList'></div>
                     <div style='padding-top:1em;'>
-                        <label>Search : <input id='search-issue' type="text" placeholder="search tags..." /></label>
-                        <label>Columns : <input id='columns-issue' type="text" size="50"
+                        <label>Search : <input id='search-document' type="text" placeholder="search tags..." /></label>
+                        <label>Columns : <input id='columns-document' type="text" size="50"
                                 placeholder="list columns sub-search, comma separated" /></label>
                     </div>
                 </div>
                 <div class="mui-divider"></div>
-                <div id='board-issues-ul'></div>
+                <div id='board-documents-ul'></div>
                 <div class="mui-divider"></div>
-                <form id='new-issue-form'>
-                    <label>Add issue : <input id='new-issue-name' type="text"
-                            placeholder="new issue's name..." /></label>
-                    <button role="submit" class="mui-btn mui-btn--primary mui-btn--flat">Create issue</button>
+                <form id='new-document-form'>
+                    <label>Add document : <input id='new-document-name' type="text"
+                            placeholder="new document's name..." /></label>
+                    <button role="submit" class="mui-btn mui-btn--primary mui-btn--flat">Create document</button>
                 </form>
             </div>
 
             <h1>Detail zone</h1>
-            <div id='board-opened-issues'></div>
+            <div id='board-opened-documents'></div>
 
             <h1>Logs</h1>
             <div class="mui-panel">
@@ -199,63 +199,63 @@
         }
 
         function clear() {
-            el('board-issues-ul').innerHTML = ''
-            el('board-opened-issues').innerHTML = ''
+            el('board-documents-ul').innerHTML = ''
+            el('board-opened-documents').innerHTML = ''
         }
 
-        function editIssue(name) {
-            el('board-opened-issues').innerHTML = ''
+        function editDocument(name) {
+            el('board-opened-documents').innerHTML = ''
 
             if (!name)
                 return
 
-            const issueElement = document.createElement('div')
-            issueElement.classList.add('mui-panel')
-            issueElement.innerHTML += `<input id='name-input' type='text' style='font-size:2em;'/></input>`
+            const documentElement = document.createElement('div')
+            documentElement.classList.add('mui-panel')
+            documentElement.innerHTML += `<input id='name-input' type='text' style='font-size:2em;'/></input>`
             const contentElement = document.createElement('div')
             contentElement.innerHTML += `<h2>Content</h2>`
-            issueElement.appendChild(contentElement)
-            issueElement.appendChild(elFromHtml(`<button onclick='showIssue("${name}")' class="mui-btn mui-btn--raised">Cancel</button>`))
-            issueElement.appendChild(elFromHtml(`<button class="validate-edit mui-btn mui-btn--primary mui-btn--raised">Validate</button>`))
+            documentElement.appendChild(contentElement)
+            documentElement.appendChild(elFromHtml(`<button onclick='showDocument("${name}")' class="mui-btn mui-btn--raised">Cancel</button>`))
+            documentElement.appendChild(elFromHtml(`<button class="validate-edit mui-btn mui-btn--primary mui-btn--raised">Validate</button>`))
 
-            el('board-opened-issues').appendChild(issueElement)
+            el('board-opened-documents').appendChild(documentElement)
 
-            issueElement.querySelector('#name-input').value = name
+            documentElement.querySelector('#name-input').value = name
 
-            fetch(`/api/issues/${name}/content`)
+            fetch(`/api/documents/${name}/content`)
                 .then(response => response.text())
-                .then(content => contentElement.innerHTML += `<textarea class='issue-content-textarea' style='width:80em;height:30em;'>${content}</textarea>`)
+                .then(content => contentElement.innerHTML += `<textarea class='document-content-textarea' style='width:80em;height:30em;'>${content}</textarea>`)
                 .catch(err => log(`get content for ${name} failed`))
 
-            let validateButton = issueElement.getElementsByClassName('validate-edit').item(0)
+            let validateButton = documentElement.getElementsByClassName('validate-edit').item(0)
             validateButton.addEventListener('click', () => {
                 let waitCount = 1
                 const maybeReload = name => {
                     waitCount--
                     if (!waitCount)
-                        reloadWithIssue(name)
+                        reloadWithDocument(name)
                 }
 
-                const newName = issueElement.querySelector('#name-input').value
+                const newName = documentElement.querySelector('#name-input').value
                 if (newName != name) {
                     waitCount++
-                    postData(`/api/issues/${name}/rename`, { name: newName })
+                    postData(`/api/documents/${name}/rename`, { name: newName })
                         .then(_ => {
-                            log(`renamed issue ${name}`)
+                            log(`renamed document ${name}`)
                             maybeReload(newName)
                         })
                         .catch(err => log(`rename ${name} failed`))
                 }
 
-                const newContent = issueElement.getElementsByClassName('issue-content-textarea').item(0).value
+                const newContent = documentElement.getElementsByClassName('document-content-textarea').item(0).value
                 if (newContent) {
                     waitCount++
-                    putData(`/api/issues/${name}/content`, newContent)
+                    putData(`/api/documents/${name}/content`, newContent)
                         .then(_ => {
-                            log(`updated issue ${name} content`)
+                            log(`updated document ${name} content`)
                             maybeReload(newName)
                         })
-                        .catch(err => log(`editIssue ${name} failed`))
+                        .catch(err => log(`editDocument ${name} failed`))
                 }
                 else {
                     log(`no change to content`)
@@ -265,8 +265,8 @@
             })
         }
 
-        function addTagToIssue(name, tagToAdd) {
-            fetch(`/api/issues/${name}/metadata`)
+        function addTagToDocument(name, tagToAdd) {
+            fetch(`/api/documents/${name}/metadata`)
                 .then(response => response.json())
                 .then(metadata => {
                     let update = false
@@ -288,12 +288,12 @@
 
                     if (update) {
                         // update metadata
-                        putData(`/api/issues/${name}/metadata`, metadata)
+                        putData(`/api/documents/${name}/metadata`, metadata)
                             .then(_ => {
-                                log(`update issue metadata ${name}`)
-                                reloadWithIssue(name)
+                                log(`update document metadata ${name}`)
+                                reloadWithDocument(name)
                             })
-                            .catch(err => log(`updateIssue metadata ${name} failed`))
+                            .catch(err => log(`updateDocument metadata ${name} failed`))
                     }
                     else {
                         log(`tag already present`)
@@ -302,36 +302,36 @@
                 .catch(err => log(`get metadata for ${name} failed`))
         }
 
-        function showIssue(name) {
-            el('board-opened-issues').innerHTML = ''
+        function showDocument(name) {
+            el('board-opened-documents').innerHTML = ''
 
             if (!name)
                 return
 
-            const issueElement = document.createElement('div')
-            issueElement.classList.add('mui-panel')
-            issueElement.innerHTML += `<div class='mui--text-dark-secondary mui--text-caption' style='padding-top:1em;padding-bottom:1.7em;'>${name}</div>`
+            const documentElement = document.createElement('div')
+            documentElement.classList.add('mui-panel')
+            documentElement.innerHTML += `<div class='mui--text-dark-secondary mui--text-caption' style='padding-top:1em;padding-bottom:1.7em;'>${name}</div>`
             const metadataElement = document.createElement('div')
-            issueElement.appendChild(metadataElement)
-            issueElement.appendChild(elFromHtml(`<form id='issue-add-tag-form'>Tags: <label><input id='issue-add-tag-text'/></label><button role='submit' class='mui-btn mui-btn--primary mui-btn--flat'>add tag</button></form>`))
-            issueElement.appendChild(elFromHtml('<div class="mui-divider"></div>'))
+            documentElement.appendChild(metadataElement)
+            documentElement.appendChild(elFromHtml(`<form id='document-add-tag-form'>Tags: <label><input id='document-add-tag-text'/></label><button role='submit' class='mui-btn mui-btn--primary mui-btn--flat'>add tag</button></form>`))
+            documentElement.appendChild(elFromHtml('<div class="mui-divider"></div>'))
             const contentElement = document.createElement('div')
-            issueElement.appendChild(contentElement)
-            issueElement.appendChild(elFromHtml('<div class="mui-divider"></div>'))
-            issueElement.appendChild(elFromHtml(`<button onclick='editIssue("${name}")' class="mui-btn mui-btn--primary mui-btn--flat">Edit issue</button>`))
+            documentElement.appendChild(contentElement)
+            documentElement.appendChild(elFromHtml('<div class="mui-divider"></div>'))
+            documentElement.appendChild(elFromHtml(`<button onclick='editDocument("${name}")' class="mui-btn mui-btn--primary mui-btn--flat">Edit document</button>`))
 
-            issueElement.querySelector('#issue-add-tag-form').addEventListener('submit', event => {
+            documentElement.querySelector('#document-add-tag-form').addEventListener('submit', event => {
                 event.preventDefault()
                 event.stopPropagation()
 
-                let tag = issueElement.querySelector('#issue-add-tag-text').value
+                let tag = documentElement.querySelector('#document-add-tag-text').value
 
-                addTagToIssue(name, tag)
+                addTagToDocument(name, tag)
             })
 
-            el('board-opened-issues').appendChild(issueElement)
+            el('board-opened-documents').appendChild(documentElement)
 
-            fetch(`/api/issues/${name}/metadata`)
+            fetch(`/api/documents/${name}/metadata`)
                 .then(response => response.json())
                 .then(metadata => {
                     if (metadata && metadata.tags) {
@@ -343,7 +343,7 @@
                 })
                 .catch(err => log(`get metadata for ${name} failed`))
 
-            fetch(`/api/issues/${name}/content?interpolated=true`)
+            fetch(`/api/documents/${name}/content?interpolated=true`)
                 .then(response => response.text())
                 .then(content => {
                     contentElement.innerHTML += marked(content)
@@ -351,58 +351,58 @@
                 .catch(err => log(`get content for ${name} failed`))
         }
 
-        function loadIssues() {
-            let search = el('search-issue').value || null
-            let columns = (el('columns-issue').value || '').split(",").map(v => v.trim())
+        function loadDocuments() {
+            let search = el('search-document').value || null
+            let columns = (el('columns-document').value || '').split(",").map(v => v.trim())
 
             if (search)
-                localStorage.setItem('search-issue', search)
+                localStorage.setItem('search-document', search)
             else
-                localStorage.removeItem('search-issue')
+                localStorage.removeItem('search-document')
             if (columns)
-                localStorage.setItem('columns-issue', columns)
+                localStorage.setItem('columns-document', columns)
             else
-                localStorage.removeItem('columns-issue')
+                localStorage.removeItem('columns-document')
 
             if (!columns.length)
                 columns.push(null)
 
-            let columnsElement = el('board-issues-ul')
+            let columnsElement = el('board-documents-ul')
             columnsElement.innerHTML = ''
 
-            let issueIndex = -1
+            let documentIndex = -1
             for (let column of columns) {
-                issueIndex++
+                documentIndex++
 
                 let q = search ? (column ? `& ${search} ${column}` : search) : column
 
                 let columnElement = elFromHtml(`<div><div style='text-align: center;font-weight: bold;padding-bottom: .5em;'>${q || 'All'}</div></div>`)
-                if (issueIndex > 0)
+                if (documentIndex > 0)
                     columnElement.style.marginLeft = '1em'
                 columnsElement.appendChild(columnElement)
 
-                fetch(q ? `/api/issues/?q=${encodeURIComponent(q)}` : "/api/issues")
+                fetch(q ? `/api/documents/?q=${encodeURIComponent(q)}` : "/api/documents")
                     .then(response => response.json())
-                    .then(issues => {
-                        let prep = issues.map(name => `<div><span onclick='showIssue("${name}")'>${name}</span>&nbsp;<span x-id='tags'></span>&nbsp;&nbsp;&nbsp;<button onclick='deleteIssue("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
+                    .then(documents => {
+                        let prep = documents.map(name => `<div><span onclick='showDocument("${name}")'>${name}</span>&nbsp;<span x-id='tags'></span>&nbsp;&nbsp;&nbsp;<button onclick='deleteDocument("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
 
-                        let columnIssuesElement = elFromHtml(`<div class='mui-panel'>${prep}</div>`)
+                        let columnDocumentsElement = elFromHtml(`<div class='mui-panel'>${prep}</div>`)
 
-                        let issueToFetchTags = 0
+                        let documentToFetchTags = 0
                         const maybeLoad = () => {
-                            if (issueToFetchTags >= issues.length) {
-                                columnElement.appendChild(columnIssuesElement)
+                            if (documentToFetchTags >= documents.length) {
+                                columnElement.appendChild(columnDocumentsElement)
                                 return
                             }
 
-                            let loadedIssueTags = issueToFetchTags++
-                            let name = issues[loadedIssueTags]
+                            let loadedDocumentTags = documentToFetchTags++
+                            let name = documents[loadedDocumentTags]
 
-                            fetch(`/api/issues/${name}/metadata`)
+                            fetch(`/api/documents/${name}/metadata`)
                                 .then(response => response.json())
                                 .then(metadata => {
                                     if (metadata && metadata.tags)
-                                        columnIssuesElement.children.item(loadedIssueTags).querySelector('[x-id=tags]').innerHTML = metadata.tags.map(tagToHtmlBadge).join('')
+                                        columnDocumentsElement.children.item(loadedDocumentTags).querySelector('[x-id=tags]').innerHTML = metadata.tags.map(tagToHtmlBadge).join('')
                                     maybeLoad()
                                 })
                                 .catch(err => {
@@ -414,7 +414,7 @@
                         maybeLoad()
 
                     })
-                    .catch(err => log(`loadIssues failed`))
+                    .catch(err => log(`loadDocuments failed`))
             }
 
             loadTags()
@@ -441,61 +441,61 @@
                 .catch(err => log(`loadStatus failed`))
         }
 
-        function reloadWithIssue(issue) {
-            showIssue(issue)
+        function reloadWithDocument(document) {
+            showDocument(document)
             loadStatus()
-            loadIssues()
+            loadDocuments()
         }
 
-        function deleteIssue(name) {
-            deleteData(`/api/issues/${name}`)
+        function deleteDocument(name) {
+            deleteData(`/api/documents/${name}`)
                 .then(_ => {
-                    log(`delete issue ${name}`)
-                    reloadWithIssue(null)
+                    log(`delete document ${name}`)
+                    reloadWithDocument(null)
                 })
-                .catch(err => log(`deleteIssue ${name} failed`))
+                .catch(err => log(`deleteDocument ${name} failed`))
         }
 
-        function addIssue(name) {
-            postData(`/api/issues/${name}`, {})
+        function addDocument(name) {
+            postData(`/api/documents/${name}`, {})
                 .then(_ => {
-                    log(`add issue ${name}`)
-                    reloadWithIssue(name)
+                    log(`add document ${name}`)
+                    reloadWithDocument(name)
                 })
-                .catch(err => log(`addIssue ${name} failed`))
+                .catch(err => log(`addDocument ${name} failed`))
         }
 
         function installUi() {
-            el('search-issue').value = localStorage.getItem('search-issue') || null
-            el('columns-issue').value = localStorage.getItem('columns-issue') || null
+            el('search-document').value = localStorage.getItem('search-document') || null
+            el('columns-document').value = localStorage.getItem('columns-document') || null
 
-            let loadIssuesTriggered = false
-            const maybeLoadIssues = () => {
-                if (loadIssuesTriggered)
+            let loadDocumentsTriggered = false
+            const maybeLoadDocuments = () => {
+                if (loadDocumentsTriggered)
                     return
 
-                loadIssuesTriggered = true
+                loadDocumentsTriggered = true
                 setTimeout(() => {
-                    loadIssuesTriggered = false
-                    loadIssues()
+                    loadDocumentsTriggered = false
+                    loadDocuments()
                 }, 50)
             }
-            el('search-issue').addEventListener('input', event => {
-                maybeLoadIssues()
+            el('search-document').addEventListener('input', event => {
+                maybeLoadDocuments()
             })
 
-            el('columns-issue').addEventListener('input', event => {
-                maybeLoadIssues()
+            el('columns-document').addEventListener('input', event => {
+                maybeLoadDocuments()
             })
 
-            el('new-issue-form').addEventListener('submit', event => {
+            el('new-document-form').addEventListener('submit', event => {
                 event.preventDefault()
                 event.stopPropagation()
 
-                let name = el('new-issue-name').value
-                el('new-issue-name').value = ''
+                let name = el('new-document-name').value
+                el('new-document-name').value = ''
 
-                addIssue(name)
+                addDocument(name)
             })
 
             const $bodyEl = document.body
@@ -539,7 +539,7 @@
         }
 
         installUi()
-        loadIssues()
+        loadDocuments()
         loadStatus()
     </script>
 </body>

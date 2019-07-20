@@ -81,21 +81,21 @@ func main() {
 		webserver.Run(repo)
 		break
 
-	case "issue":
-		fmt.Println("issues management")
+	case "document":
+		fmt.Println("documents management")
 		break
 
-	case "issues":
-		fmt.Println("issues management")
+	case "documents":
+		fmt.Println("documents management")
 		break
 	}
 
 	// parse command line for those actions :
 	// * serve -port 8098 -insecure
 	// 		=> future options : multi repositories
-	// * issue list -remoteUri=local
-	// * issue create  => opens a file with a template, creates the files, commit the changes, optionnally push
-	// * issue update ISSUE_ID   => same flow : file, modify the issue files, commit the changes, optionnally push
+	// * document list -remoteUri=local
+	// * document create  => opens a file with a template, creates the files, commit the changes, optionnally push
+	// * document update DOCUMENT_ID   => same flow : file, modify the document files, commit the changes, optionnally push
 
 	// option '-remoteUri=local' can be used to talk through the REST api of another git-docs server (http://...)
 }
