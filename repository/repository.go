@@ -15,7 +15,7 @@ import (
 )
 
 type MagicGitRepository struct {
-	gitRepositoryDir string
+	gitRepositoryDir *string
 	workingDir       string
 }
 
@@ -23,14 +23,14 @@ type IssueMetadata struct {
 	Tags []string `json:"tags"`
 }
 
-func NewMagicGitRepository(gitRepositoryDir string) *MagicGitRepository {
+func NewMagicGitRepository(gitRepositoryDir *string) *MagicGitRepository {
 	return &MagicGitRepository{
 		gitRepositoryDir,
-		path.Join(gitRepositoryDir, ".magic-git"),
+		path.Join(*gitRepositoryDir, ".magic-git"),
 	}
 }
 
-func (magic *MagicGitRepository) GitRepositoryDir() string {
+func (magic *MagicGitRepository) GitRepositoryDir() *string {
 	return magic.gitRepositoryDir
 }
 
@@ -303,9 +303,9 @@ func (magic *MagicGitRepository) SetIssueMetadata(name string, metadata *IssueMe
 // git shortlog -sne --all
 
 // TODO should return false only when .magic-git is unclean, not user's files!
-func isGitRepositoryClean(dir string) bool {
+func isGitRepositoryClean(dir *string) bool {
 	cmd := exec.Command("git", "status", "--porcelain")
-	cmd.Dir = dir
+	cmd.Dir = *dir
 
 	out, err := cmd.StdoutPipe()
 	if err != nil {
@@ -372,14 +372,14 @@ func execCommand(cwd string, name string, args ...string) (*string, interface{})
 	return &content, nil
 }
 
-func commitChanges(gitRepositoryDir string, message string, committedDir string) bool {
-	output, err := execCommand(gitRepositoryDir, "git", "add", committedDir)
+func commitChanges(gitRepositoryDir *string, message string, committedDir string) bool {
+	output, err := execCommand(*gitRepositoryDir, "git", "add", committedDir)
 	if err != nil {
 		fmt.Printf("error staging changes %v\n%s", err, *output)
 		return false
 	}
 
-	output, err = execCommand(gitRepositoryDir, "git", "commit", "-m", message)
+	output, err = execCommand(*gitRepositoryDir, "git", "commit", "-m", message)
 	if err != nil {
 		fmt.Printf("error commit %v\n%s", err, *output)
 		return false
@@ -394,7 +394,7 @@ func (magic *MagicGitRepository) IsClean() (bool, interface{}) {
 }
 
 func (magic *MagicGitRepository) GetStatus() (*string, interface{}) {
-	output, err := execCommand(magic.gitRepositoryDir, "git", "status")
+	output, err := execCommand(*magic.gitRepositoryDir, "git", "status")
 	if err != nil {
 		return nil, err
 	}

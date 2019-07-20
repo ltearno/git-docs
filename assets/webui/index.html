@@ -383,7 +383,7 @@
                 fetch(q ? `/api/issues/?q=${encodeURIComponent(q)}` : "/api/issues")
                     .then(response => response.json())
                     .then(issues => {
-                        let prep = issues.map(name => `<div>- <span onclick='showIssue("${name}")'>${name}</span>&nbsp;<span x-id='tags'></span>&nbsp;&nbsp;&nbsp;<button onclick='deleteIssue("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
+                        let prep = issues.map(name => `<div><span onclick='showIssue("${name}")'>${name}</span>&nbsp;<span x-id='tags'></span>&nbsp;&nbsp;&nbsp;<button onclick='deleteIssue("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
 
                         let columnIssuesElement = elFromHtml(`<div class='mui-panel'>${prep}</div>`)
 

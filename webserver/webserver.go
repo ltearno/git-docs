@@ -144,7 +144,7 @@ func handlerStatusRestAPI(w http.ResponseWriter, r *http.Request, p httprouter.P
 	response := StatusResponse{
 		Clean:         clean,
 		Text:          *status,
-		GitRepository: server.magic.GitRepositoryDir(),
+		GitRepository: *server.magic.GitRepositoryDir(),
 	}
 
 	jsonResponse(w, 200, response)
