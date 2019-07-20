@@ -19,7 +19,7 @@ type GitDocsRepository struct {
 	workingDir       string
 }
 
-type IssueMetadata struct {
+type DocumentMetadata struct {
 	Tags []string `json:"tags"`
 }
 
@@ -120,8 +120,8 @@ func (repo *GitDocsRepository) GetAllTags() ([]string, interface{}) {
 	tagSet := map[string]bool{}
 	var result = []string{}
 
-	for _, issue := range documents {
-		metadata, err := repo.GetIssueMetadata(issue)
+	for _, document := range documents {
+		metadata, err := repo.GetDocumentMetadata(document)
 		if err != nil {
 			return result, "cannot load one metadata"
 		}
@@ -138,7 +138,7 @@ func (repo *GitDocsRepository) GetAllTags() ([]string, interface{}) {
 	return result, nil
 }
 
-func issueTagsContainText(metadata *IssueMetadata, q string) bool {
+func documentTagsContainText(metadata *DocumentMetadata, q string) bool {
 	for _, tag := range metadata.Tags {
 		if strings.Contains(strings.ToLower(tag), q) {
 			return true
@@ -148,7 +148,7 @@ func issueTagsContainText(metadata *IssueMetadata, q string) bool {
 	return false
 }
 
-func issueMatchSearch(metadata *IssueMetadata, q string) bool {
+func documentMatchSearch(metadata *DocumentMetadata, q string) bool {
 	q = strings.TrimSpace(q)
 	if q == "" {
 		return true
@@ -158,16 +158,16 @@ func issueMatchSearch(metadata *IssueMetadata, q string) bool {
 		if separatorPos == 0 {
 			return false
 		}
-		return issueMatchSearch(metadata, q[:separatorPos]) && issueMatchSearch(metadata, q[separatorPos+1:])
+		return documentMatchSearch(metadata, q[:separatorPos]) && documentMatchSearch(metadata, q[separatorPos+1:])
 	} else if strings.HasPrefix(q, "|") {
 		q = strings.TrimSpace(q[1:])
 		separatorPos := strings.Index(q, " ")
 		if separatorPos == 0 {
 			return false
 		}
-		return issueMatchSearch(metadata, q[:separatorPos]) || issueMatchSearch(metadata, q[separatorPos+1:])
+		return documentMatchSearch(metadata, q[:separatorPos]) || documentMatchSearch(metadata, q[separatorPos+1:])
 	} else {
-		return issueTagsContainText(metadata, q)
+		return documentTagsContainText(metadata, q)
 	}
 }
 
@@ -180,14 +180,14 @@ func (repo *GitDocsRepository) SearchDocuments(q string) ([]string, interface{})
 	q = strings.ToLower(q)
 	var result = []string{}
 
-	for _, issue := range documents {
-		metadata, err := repo.GetIssueMetadata(issue)
+	for _, document := range documents {
+		metadata, err := repo.GetDocumentMetadata(document)
 		if err != nil {
 			return result, "cannot load one metadata"
 		}
 
-		if issueMatchSearch(metadata, q) {
-			result = append(result, issue)
+		if documentMatchSearch(metadata, q) {
+			result = append(result, document)
 		}
 	}
 
@@ -198,20 +198,20 @@ func (repo *GitDocsRepository) getDocumentsPath() string {
 	return path.Join(repo.workingDir, "issues")
 }
 
-func (repo *GitDocsRepository) getIssueDirPath(name string) string {
+func (repo *GitDocsRepository) getDocumentDirPath(name string) string {
 	return path.Join(repo.getDocumentsPath(), name)
 }
 
-func (repo *GitDocsRepository) getIssueMetadataFilePath(name string) string {
-	return path.Join(repo.getIssueDirPath(name), "metadata.json")
+func (repo *GitDocsRepository) getDocumentMetadataFilePath(name string) string {
+	return path.Join(repo.getDocumentDirPath(name), "metadata.json")
 }
 
-func (repo *GitDocsRepository) getIssueContentFilePath(name string) string {
-	return path.Join(repo.getIssueDirPath(name), "content.md")
+func (repo *GitDocsRepository) getDocumentContentFilePath(name string) string {
+	return path.Join(repo.getDocumentDirPath(name), "content.md")
 }
 
-func (repo *GitDocsRepository) GetIssueContent(name string) (*string, interface{}) {
-	filePath := repo.getIssueContentFilePath(name)
+func (repo *GitDocsRepository) GetDocumentContent(name string) (*string, interface{}) {
+	filePath := repo.getDocumentContentFilePath(name)
 	bytes, err := readFile(filePath)
 	if err != nil {
 		return nil, "no content"
@@ -222,7 +222,7 @@ func (repo *GitDocsRepository) GetIssueContent(name string) (*string, interface{
 	return &content, nil
 }
 
-func (repo *GitDocsRepository) SetIssueContent(name string, content string) (bool, interface{}) {
+func (repo *GitDocsRepository) SetDocumentContent(name string, content string) (bool, interface{}) {
 	if strings.Contains(name, "/") {
 		return false, "invalid name"
 	}
@@ -233,23 +233,23 @@ func (repo *GitDocsRepository) SetIssueContent(name string, content string) (boo
 		}
 	}
 
-	currentContent, err := repo.GetIssueContent(name)
+	currentContent, err := repo.GetDocumentContent(name)
 	if err != nil {
-		return false, "cannot read issue content"
+		return false, "cannot read document content"
 	}
 
 	if *(currentContent) == content {
 		return true, nil
 	}
 
-	filePath := repo.getIssueContentFilePath(name)
+	filePath := repo.getDocumentContentFilePath(name)
 	ok := writeFile(filePath, content)
 	if !ok {
 		return false, "error"
 	}
 
 	if repo.gitRepositoryDir != nil {
-		ok = commitChanges(repo.gitRepositoryDir, fmt.Sprintf("documents() - updated issue content %s", name), repo.workingDir)
+		ok = commitChanges(repo.gitRepositoryDir, fmt.Sprintf("documents() - updated document content %s", name), repo.workingDir)
 		if !ok {
 			return false, "commit error"
 		}
@@ -258,14 +258,14 @@ func (repo *GitDocsRepository) SetIssueContent(name string, content string) (boo
 	return true, nil
 }
 
-func (repo *GitDocsRepository) GetIssueMetadata(name string) (*IssueMetadata, interface{}) {
-	filePath := repo.getIssueMetadataFilePath(name)
+func (repo *GitDocsRepository) GetDocumentMetadata(name string) (*DocumentMetadata, interface{}) {
+	filePath := repo.getDocumentMetadataFilePath(name)
 	bytes, err := readFile(filePath)
 	if err != nil {
 		return nil, "no content"
 	}
 
-	result := &IssueMetadata{}
+	result := &DocumentMetadata{}
 
 	err = json.Unmarshal(bytes, result)
 	if err != nil {
@@ -275,7 +275,7 @@ func (repo *GitDocsRepository) GetIssueMetadata(name string) (*IssueMetadata, in
 	return result, nil
 }
 
-func (repo *GitDocsRepository) SetIssueMetadata(name string, metadata *IssueMetadata) (bool, interface{}) {
+func (repo *GitDocsRepository) SetDocumentMetadata(name string, metadata *DocumentMetadata) (bool, interface{}) {
 	if strings.Contains(name, "/") {
 		return false, "invalid name"
 	}
@@ -291,14 +291,14 @@ func (repo *GitDocsRepository) SetIssueMetadata(name string, metadata *IssueMeta
 		return false, "json error"
 	}
 
-	filePath := repo.getIssueMetadataFilePath(name)
+	filePath := repo.getDocumentMetadataFilePath(name)
 	ok := writeFile(filePath, string(bytes))
 	if !ok {
 		return false, "write file error"
 	}
 
 	if repo.gitRepositoryDir != nil {
-		ok = commitChanges(repo.gitRepositoryDir, fmt.Sprintf("documents() - updated issue metadata %s", name), repo.workingDir)
+		ok = commitChanges(repo.gitRepositoryDir, fmt.Sprintf("documents() - updated document metadata %s", name), repo.workingDir)
 		if !ok {
 			return false, "commit error"
 		}
@@ -432,7 +432,7 @@ func (repo *GitDocsRepository) GetStatus() (*string, interface{}) {
 	return &res, nil
 }
 
-func (repo *GitDocsRepository) RenameIssue(name string, newName string) bool {
+func (repo *GitDocsRepository) RenameDocument(name string, newName string) bool {
 	if strings.Contains(name, "/") {
 		return false
 	}
@@ -443,23 +443,23 @@ func (repo *GitDocsRepository) RenameIssue(name string, newName string) bool {
 		}
 	}
 
-	issueDir := repo.getIssueDirPath(name)
-	if !tools.ExistsFile(issueDir) {
+	documentDir := repo.getDocumentDirPath(name)
+	if !tools.ExistsFile(documentDir) {
 		return false
 	}
 
-	newIssueDir := repo.getIssueDirPath(newName)
-	if tools.ExistsFile(newIssueDir) {
+	newDocumentDir := repo.getDocumentDirPath(newName)
+	if tools.ExistsFile(newDocumentDir) {
 		return false
 	}
 
-	err := os.Rename(issueDir, newIssueDir)
+	err := os.Rename(documentDir, newDocumentDir)
 	if err != nil {
 		return false
 	}
 
 	if repo.gitRepositoryDir != nil {
-		ok := commitChanges(repo.gitRepositoryDir, fmt.Sprintf("documents() - renamed issue %s to %s", name, newIssueDir), repo.workingDir)
+		ok := commitChanges(repo.gitRepositoryDir, fmt.Sprintf("documents() - renamed document %s to %s", name, newDocumentDir), repo.workingDir)
 		if !ok {
 			return false
 		}
@@ -468,7 +468,7 @@ func (repo *GitDocsRepository) RenameIssue(name string, newName string) bool {
 	return true
 }
 
-func (repo *GitDocsRepository) AddIssue(name string) bool {
+func (repo *GitDocsRepository) AddDocument(name string) bool {
 	if strings.Contains(name, "/") {
 		return false
 	}
@@ -479,30 +479,30 @@ func (repo *GitDocsRepository) AddIssue(name string) bool {
 		}
 	}
 
-	issueDir := repo.getIssueDirPath(name)
-	if tools.ExistsFile(issueDir) {
+	documentDir := repo.getDocumentDirPath(name)
+	if tools.ExistsFile(documentDir) {
 		return false
 	}
 
-	os.Mkdir(issueDir, 0755)
+	os.Mkdir(documentDir, 0755)
 
-	ok := writeFileJson(repo.getIssueMetadataFilePath(name), IssueMetadata{Tags: []string{}})
+	ok := writeFileJson(repo.getDocumentMetadataFilePath(name), DocumentMetadata{Tags: []string{}})
 	if !ok {
 		return false
 	}
 
-	issueContentModelBytes, err := assetsgen.Asset("assets/models/issue.md")
+	documentContentModelBytes, err := assetsgen.Asset("assets/models/issue.md")
 	if err != nil {
 		return false
 	}
 
-	ok = writeFile(repo.getIssueContentFilePath(name), string(issueContentModelBytes))
+	ok = writeFile(repo.getDocumentContentFilePath(name), string(documentContentModelBytes))
 	if !ok {
 		return false
 	}
 
 	if repo.gitRepositoryDir != nil {
-		ok = commitChanges(repo.gitRepositoryDir, fmt.Sprintf("documents() - added issue %s", name), repo.workingDir)
+		ok = commitChanges(repo.gitRepositoryDir, fmt.Sprintf("documents() - added document %s", name), repo.workingDir)
 		if !ok {
 			return false
 		}
@@ -511,7 +511,7 @@ func (repo *GitDocsRepository) AddIssue(name string) bool {
 	return true
 }
 
-func (repo *GitDocsRepository) DeleteIssue(name string) (bool, interface{}) {
+func (repo *GitDocsRepository) DeleteDocument(name string) (bool, interface{}) {
 	if strings.Contains(name, "/") {
 		return false, "'/' is forbidden in names"
 	}
@@ -522,15 +522,15 @@ func (repo *GitDocsRepository) DeleteIssue(name string) (bool, interface{}) {
 		}
 	}
 
-	issueDir := repo.getIssueDirPath(name)
-	if !tools.ExistsFile(issueDir) {
-		return false, "issue does not exists"
+	documentDir := repo.getDocumentDirPath(name)
+	if !tools.ExistsFile(documentDir) {
+		return false, "document does not exists"
 	}
 
-	os.RemoveAll(issueDir)
+	os.RemoveAll(documentDir)
 
 	if repo.gitRepositoryDir != nil {
-		ok := commitChanges(repo.gitRepositoryDir, fmt.Sprintf("documents() - deleted issue %s", name), repo.workingDir)
+		ok := commitChanges(repo.gitRepositoryDir, fmt.Sprintf("documents() - deleted document %s", name), repo.workingDir)
 		if !ok {
 			return false, false
 		}

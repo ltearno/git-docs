@@ -20,8 +20,8 @@ type PageContext struct {
 	Name string
 }
 
-type IssueContext struct {
-	Issue struct {
+type DocumentContext struct {
+	Document struct {
 		Name string
 	}
 }
@@ -30,7 +30,7 @@ type WebServer struct {
 	repo *repository.GitDocsRepository
 }
 
-type RenameIssueRequest struct {
+type RenameDocumentRequest struct {
 	Name string `json:"name"`
 }
 
@@ -159,28 +159,28 @@ func handlerTagsRestAPI(w http.ResponseWriter, r *http.Request, p httprouter.Par
 	}
 }
 
-func handlerGetIssues(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+func handlerGetDocuments(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
 	if r.URL.Query().Get("q") == "" {
-		issues, err := server.repo.GetIssues()
+		documents, err := server.repo.GetDocuments()
 		if err != nil {
 			errorResponse(w, 500, "internal error")
 		} else {
-			jsonResponse(w, 200, issues)
+			jsonResponse(w, 200, documents)
 		}
 	} else {
-		issues, err := server.repo.SearchIssues(r.URL.Query().Get("q"))
+		documents, err := server.repo.SearchDocuments(r.URL.Query().Get("q"))
 		if err != nil {
 			errorResponse(w, 500, "internal error")
 		} else {
-			jsonResponse(w, 200, issues)
+			jsonResponse(w, 200, documents)
 		}
 	}
 }
 
-func handlerGetIssueMetadata(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
-	name := p.ByName("issue_name")
+func handlerGetDocumentMetadata(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	name := p.ByName("document_name")
 
-	metadata, err := server.repo.GetIssueMetadata(name)
+	metadata, err := server.repo.GetDocumentMetadata(name)
 	if err != nil {
 		errorResponse(w, 404, "not found metadata")
 	} else {
@@ -188,17 +188,17 @@ func handlerGetIssueMetadata(w http.ResponseWriter, r *http.Request, p httproute
 	}
 }
 
-func handlerGetIssueContent(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
-	name := p.ByName("issue_name")
+func handlerGetDocumentContent(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	name := p.ByName("document_name")
 
-	content, err := server.repo.GetIssueContent(name)
+	content, err := server.repo.GetDocumentContent(name)
 	if err != nil {
 		errorResponse(w, 404, "not found content")
 	} else {
 		w.Header().Set("Content-Type", "text/markdown")
 		if r.URL.Query().Get("interpolated") == "true" {
-			context := &IssueContext{}
-			context.Issue.Name = name
+			context := &DocumentContext{}
+			context.Document.Name = name
 
 			interpolated := interpolate(name, *content, context)
 			if interpolated != nil {
@@ -212,10 +212,10 @@ func handlerGetIssueContent(w http.ResponseWriter, r *http.Request, p httprouter
 	}
 }
 
-func handlerDeleteIssue(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
-	name := p.ByName("issue_name")
+func handlerDeleteDocument(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	name := p.ByName("document_name")
 
-	result, err := server.repo.DeleteIssue(name)
+	result, err := server.repo.DeleteDocument(name)
 	if err != nil {
 		errorResponse(w, 500, fmt.Sprintf("delete error : %v", err))
 	} else {
@@ -223,31 +223,31 @@ func handlerDeleteIssue(w http.ResponseWriter, r *http.Request, p httprouter.Par
 	}
 }
 
-func handlerPostIssue(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
-	name := p.ByName("issue_name")
+func handlerPostDocument(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	name := p.ByName("document_name")
 
-	if server.repo.AddIssue(name) {
-		messageResponse(w, "issue added")
+	if server.repo.AddDocument(name) {
+		messageResponse(w, "document added")
 	} else {
 		errorResponse(w, 500, "error (maybe already exists ?)")
 	}
 }
 
-func handlerPostIssueRename(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
-	name := p.ByName("issue_name")
+func handlerPostDocumentRename(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	name := p.ByName("document_name")
 
 	out, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		errorResponse(w, 400, "error in body")
 	} else {
-		request := &RenameIssueRequest{}
+		request := &RenameDocumentRequest{}
 
 		err = json.Unmarshal(out, request)
 		if err != nil {
 			errorResponse(w, 400, "error malformatted json")
 		} else {
-			if server.repo.RenameIssue(name, request.Name) {
-				messageResponse(w, "issue renamed")
+			if server.repo.RenameDocument(name, request.Name) {
+				messageResponse(w, "document renamed")
 			} else {
 				errorResponse(w, 500, "error")
 			}
@@ -256,42 +256,42 @@ func handlerPostIssueRename(w http.ResponseWriter, r *http.Request, p httprouter
 	}
 }
 
-func handlerPutIssueMetadata(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
-	name := p.ByName("issue_name")
+func handlerPutDocumentMetadata(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	name := p.ByName("document_name")
 
 	out, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		errorResponse(w, 400, "error in body")
 	} else {
-		metadata := &repository.IssueMetadata{}
+		metadata := &repository.DocumentMetadata{}
 
 		err = json.Unmarshal(out, metadata)
 		if err != nil {
 			errorResponse(w, 400, "error malformatted json")
 		} else {
-			ok, err := server.repo.SetIssueMetadata(name, metadata)
+			ok, err := server.repo.SetDocumentMetadata(name, metadata)
 			if err != nil || !ok {
 				errorResponse(w, 400, "error setting metadata")
 			} else {
-				messageResponse(w, "issue metadata updated")
+				messageResponse(w, "document metadata updated")
 			}
 		}
 
 	}
 }
 
-func handlerPutIssueContent(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
-	name := p.ByName("issue_name")
+func handlerPutDocumentContent(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	name := p.ByName("document_name")
 
 	out, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		errorResponse(w, 400, "error in body")
 	} else {
-		ok, err := server.repo.SetIssueContent(name, string(out))
+		ok, err := server.repo.SetDocumentContent(name, string(out))
 		if err != nil || !ok {
 			errorResponse(w, 400, fmt.Sprintf("error setting content : %v", err))
 		} else {
-			messageResponse(w, "issue content updated")
+			messageResponse(w, "document content updated")
 		}
 	}
 }
@@ -321,14 +321,14 @@ func (self *WebServer) Init(router *httprouter.Router) {
 	router.GET("/webui/*requested_resource", makeHandle(handlerWebUi, self))
 	router.GET("/api/status", makeHandle(handlerStatusRestAPI, self))
 	router.GET("/api/tags", makeHandle(handlerTagsRestAPI, self))
-	router.GET("/api/issues", makeHandle(handlerGetIssues, self))
-	router.GET("/api/issues/:issue_name/metadata", makeHandle(handlerGetIssueMetadata, self))
-	router.GET("/api/issues/:issue_name/content", makeHandle(handlerGetIssueContent, self))
-	router.POST("/api/issues/:issue_name", makeHandle(handlerPostIssue, self))
-	router.POST("/api/issues/:issue_name/rename", makeHandle(handlerPostIssueRename, self))
-	router.PUT("/api/issues/:issue_name/metadata", makeHandle(handlerPutIssueMetadata, self))
-	router.PUT("/api/issues/:issue_name/content", makeHandle(handlerPutIssueContent, self))
-	router.DELETE("/api/issues/:issue_name", makeHandle(handlerDeleteIssue, self))
+	router.GET("/api/documents", makeHandle(handlerGetDocuments, self))
+	router.GET("/api/documents/:document_name/metadata", makeHandle(handlerGetDocumentMetadata, self))
+	router.GET("/api/documents/:document_name/content", makeHandle(handlerGetDocumentContent, self))
+	router.POST("/api/documents/:document_name", makeHandle(handlerPostDocument, self))
+	router.POST("/api/documents/:document_name/rename", makeHandle(handlerPostDocumentRename, self))
+	router.PUT("/api/documents/:document_name/metadata", makeHandle(handlerPutDocumentMetadata, self))
+	router.PUT("/api/documents/:document_name/content", makeHandle(handlerPutDocumentContent, self))
+	router.DELETE("/api/documents/:document_name", makeHandle(handlerDeleteDocument, self))
 }
 
 /* Run runs the Web server... */
