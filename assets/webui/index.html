@@ -345,8 +345,32 @@
             fetch(q == null ? "/api/issues" : `/api/issues/?q=${q}`)
                 .then(response => response.json())
                 .then(issues => {
-                    prep += issues.map(name => `<div>- <span onclick='showIssue("${name}")'>${name}</span>&nbsp;&nbsp;&nbsp;<button onclick='deleteIssue("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
+                    prep += issues.map(name => `<div>- <span onclick='showIssue("${name}")'>${name}</span>&nbsp;<span x-id='tags'></span>&nbsp;&nbsp;&nbsp;<button onclick='deleteIssue("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
                     el('board-issues-ul').innerHTML = prep
+
+                    let issueToFetchTags = 0
+                    const maybeLoad = () => {
+                        if (issueToFetchTags >= issues.length)
+                            return
+
+                        let loadedIssueTags = issueToFetchTags++
+                        let name = issues[loadedIssueTags]
+
+                        fetch(`/api/issues/${name}/metadata`)
+                            .then(response => response.json())
+                            .then(metadata => {
+                                if (metadata && metadata.tags)
+                                    el('board-issues-ul').children.item(loadedIssueTags).querySelector('[x-id=tags]').innerHTML = metadata.tags.map(tagToHtmlBadge).join('')
+                                maybeLoad()
+                            })
+                            .catch(err => {
+                                log(`get metadata for ${name} failed`)
+                                maybeLoad()
+                            })
+                    }
+
+                    maybeLoad()
+
                 })
                 .catch(err => log(`loadIssues failed`))
 
