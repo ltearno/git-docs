@@ -504,7 +504,8 @@ func (magic *MagicGitRepository) EnsureWorkingSpaceReady() bool {
 			return false
 		}
 
-		writeFile(path.Join(magic.workingDir, ".gitignore"), "tmp")
+		// since we don't need a tmp directory right now, the line below is commented out
+		// writeFile(path.Join(magic.workingDir, ".gitignore"), "tmp")
 
 		err = os.Mkdir(path.Join(magic.workingDir, "issues"), 0755)
 		if err != nil {
