@@ -76,6 +76,9 @@
                     </form>
                 </span>
                 <label>Search : <input id='search-issue' type="text" placeholder="search tags..." /></label>
+                <br />
+                <label>Columns : <input id='columns-issue' type="text"
+                        placeholder="list columns sub-search, comma separated" /></label>
                 <div id='board-issues-ul'></div>
             </div>
 
@@ -340,41 +343,63 @@
                 .catch(err => log(`get content for ${name} failed`))
         }
 
-        function loadIssues(q = null) {
-            let prep = ''
-            fetch(q == null ? "/api/issues" : `/api/issues/?q=${q}`)
-                .then(response => response.json())
-                .then(issues => {
-                    prep += issues.map(name => `<div>- <span onclick='showIssue("${name}")'>${name}</span>&nbsp;<span x-id='tags'></span>&nbsp;&nbsp;&nbsp;<button onclick='deleteIssue("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
-                    el('board-issues-ul').innerHTML = prep
+        function loadIssues() {
+            let search = el('search-issue').value || null
+            let columns = (el('columns-issue').value || '').split(",").map(v => v.trim())
+            if (!columns.length)
+                columns.push(null)
 
-                    let issueToFetchTags = 0
-                    const maybeLoad = () => {
-                        if (issueToFetchTags >= issues.length)
-                            return
+            let columnsElement = el('board-issues-ul')
+            columnsElement.innerHTML = ''
 
-                        let loadedIssueTags = issueToFetchTags++
-                        let name = issues[loadedIssueTags]
+            let issueIndex = -1
+            for (let column of columns) {
+                issueIndex++
 
-                        fetch(`/api/issues/${name}/metadata`)
-                            .then(response => response.json())
-                            .then(metadata => {
-                                if (metadata && metadata.tags)
-                                    el('board-issues-ul').children.item(loadedIssueTags).querySelector('[x-id=tags]').innerHTML = metadata.tags.map(tagToHtmlBadge).join('')
-                                maybeLoad()
-                            })
-                            .catch(err => {
-                                log(`get metadata for ${name} failed`)
-                                maybeLoad()
-                            })
-                    }
+                let q = search ? (column ? `& ${search} ${column}` : search) : column
 
-                    maybeLoad()
+                let columnElement = document.createElement('div')
+                columnElement.classList.add('mui-panel')
+                if (issueIndex > 0)
+                    columnElement.style.marginLeft = '1em'
+                columnsElement.appendChild(columnElement)
 
-                })
-                .catch(err => log(`loadIssues failed`))
+                let prep = `<div style='text-align: center;font-weight: bold;padding-bottom: .5em;'>${q || 'All'}</div>`
 
-            if (q == null) {
+                fetch(q ? `/api/issues/?q=${encodeURIComponent(q)}` : "/api/issues")
+                    .then(response => response.json())
+                    .then(issues => {
+                        prep += issues.map(name => `<div>- <span onclick='showIssue("${name}")'>${name}</span>&nbsp;<span x-id='tags'></span>&nbsp;&nbsp;&nbsp;<button onclick='deleteIssue("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
+                        columnElement.innerHTML = prep
+
+                        let issueToFetchTags = 0
+                        const maybeLoad = () => {
+                            if (issueToFetchTags >= issues.length)
+                                return
+
+                            let loadedIssueTags = issueToFetchTags++
+                            let name = issues[loadedIssueTags]
+
+                            fetch(`/api/issues/${name}/metadata`)
+                                .then(response => response.json())
+                                .then(metadata => {
+                                    if (metadata && metadata.tags)
+                                        columnElement.children.item(loadedIssueTags + 1).querySelector('[x-id=tags]').innerHTML = metadata.tags.map(tagToHtmlBadge).join('')
+                                    maybeLoad()
+                                })
+                                .catch(err => {
+                                    log(`get metadata for ${name} failed`)
+                                    maybeLoad()
+                                })
+                        }
+
+                        maybeLoad()
+
+                    })
+                    .catch(err => log(`loadIssues failed`))
+            }
+
+            if (!search) {
                 fetch("/api/tags")
                     .then(response => response.json())
                     .then(tags => {
@@ -421,8 +446,23 @@
         }
 
         function installUi() {
+            let loadIssuesTriggered = false
+            const maybeLoadIssues = () => {
+                if (loadIssuesTriggered)
+                    return
+
+                loadIssuesTriggered = true
+                setTimeout(() => {
+                    loadIssuesTriggered = false
+                    loadIssues()
+                }, 50)
+            }
             el('search-issue').addEventListener('input', event => {
-                loadIssues(el('search-issue').value)
+                maybeLoadIssues()
+            })
+
+            el('columns-issue').addEventListener('input', event => {
+                maybeLoadIssues()
             })
 
             el('new-issue-form').addEventListener('submit', event => {

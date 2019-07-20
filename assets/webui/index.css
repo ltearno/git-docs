@@ -186,3 +186,8 @@ html, body, input, textarea, button {
     line-height: 1.5em;
     margin: 0;
 }
+
+#board-issues-ul {
+    display: flex;
+    flex-flow: row nowrap;
+}
