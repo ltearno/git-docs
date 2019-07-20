@@ -195,7 +195,7 @@ func (repo *GitDocsRepository) SearchDocuments(category string, q string) ([]str
 }
 
 func (repo *GitDocsRepository) getCategoriesFilePath() string {
-	return path.Join(repo.workingDir, ".git-docs-categories.json")
+	return path.Join(repo.workingDir, "categories.json")
 }
 
 func (repo *GitDocsRepository) GetCategories() []string {
