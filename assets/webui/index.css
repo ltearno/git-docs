@@ -190,4 +190,5 @@ html, body, input, textarea, button {
 #board-issues-ul {
     display: flex;
     flex-flow: row nowrap;
+    margin-top: 1em;
 }

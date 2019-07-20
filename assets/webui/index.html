@@ -67,19 +67,22 @@
 
             <h1>Board</h1>
             <div class="mui-panel">
-                <div id='tagsList'></div>
-                <span>
-                    <form id='new-issue-form'>
-                        <label>Add issue : <input id='new-issue-name' type="text"
-                                placeholder="create an issue..." /></label>
-                        <button role="submit" class="mui-btn mui-btn--primary mui-btn--flat">Create issue</button>
-                    </form>
-                </span>
-                <label>Search : <input id='search-issue' type="text" placeholder="search tags..." /></label>
-                <br />
-                <label>Columns : <input id='columns-issue' type="text"
-                        placeholder="list columns sub-search, comma separated" /></label>
+                <div style='padding-bottom:1em;'>
+                    <div id='tagsList'></div>
+                    <div style='padding-top:1em;'>
+                        <label>Search : <input id='search-issue' type="text" placeholder="search tags..." /></label>
+                        <label>Columns : <input id='columns-issue' type="text" size="50"
+                                placeholder="list columns sub-search, comma separated" /></label>
+                    </div>
+                </div>
+                <div class="mui-divider"></div>
                 <div id='board-issues-ul'></div>
+                <div class="mui-divider"></div>
+                <form id='new-issue-form'>
+                    <label>Add issue : <input id='new-issue-name' type="text"
+                            placeholder="new issue's name..." /></label>
+                    <button role="submit" class="mui-btn mui-btn--primary mui-btn--flat">Create issue</button>
+                </form>
             </div>
 
             <h1>Detail zone</h1>
