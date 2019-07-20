@@ -23,11 +23,10 @@ type IssueMetadata struct {
 	Tags []string `json:"tags"`
 }
 
-func NewMagicGitRepository(gitRepositoryDir *string) *MagicGitRepository {
-	// TODO should provide workingDir and git repository in the function parameter
+func NewMagicGitRepository(gitRepositoryDir *string, workingDir string) *MagicGitRepository {
 	return &MagicGitRepository{
 		gitRepositoryDir,
-		path.Join(*gitRepositoryDir, ".magic-git"),
+		workingDir,
 	}
 }
 
@@ -229,7 +228,7 @@ func (magic *MagicGitRepository) SetIssueContent(name string, content string) (b
 	}
 
 	if magic.gitRepositoryDir != nil {
-		if !isGitRepositoryClean(magic.gitRepositoryDir) {
+		if !magic.isGitRepositoryClean() {
 			return false, "repository is dirty"
 		}
 	}
@@ -282,7 +281,7 @@ func (magic *MagicGitRepository) SetIssueMetadata(name string, metadata *IssueMe
 	}
 
 	if magic.gitRepositoryDir != nil {
-		if !isGitRepositoryClean(magic.gitRepositoryDir) {
+		if !magic.isGitRepositoryClean() {
 			return false, "repository is dirty"
 		}
 	}
@@ -311,10 +310,19 @@ func (magic *MagicGitRepository) SetIssueMetadata(name string, metadata *IssueMe
 // list of authors, with their rank on first part of each line :
 // git shortlog -sne --all
 
-// TODO should return false only when .magic-git is unclean, not user's files!
-func isGitRepositoryClean(dir *string) bool {
+func (magic *MagicGitRepository) isGitRepositoryClean() bool {
+	return isGitRepositoryClean(magic.gitRepositoryDir, magic.workingDir)
+}
+
+func isGitRepositoryClean(gitDir *string, workingDir string) bool {
+	if !path.IsAbs(*gitDir) || !path.IsAbs(workingDir) {
+		return false
+	}
+
+	workingDirRelativePath := workingDir[len(*gitDir):]
+
 	cmd := exec.Command("git", "status", "--porcelain")
-	cmd.Dir = *dir
+	cmd.Dir = *gitDir
 
 	out, err := cmd.StdoutPipe()
 	if err != nil {
@@ -333,7 +341,7 @@ func isGitRepositoryClean(dir *string) bool {
 
 	for scanner.Scan() {
 		file := scanner.Text()[3:]
-		if strings.HasPrefix(file, ".magic-git") || strings.HasPrefix(file, "\".magic-git") {
+		if strings.HasPrefix(file, workingDirRelativePath) || strings.HasPrefix(file, "\""+workingDirRelativePath) {
 			clean = false
 			fmt.Printf("%s is not clean", file)
 		}
@@ -382,6 +390,10 @@ func execCommand(cwd string, name string, args ...string) (*string, interface{})
 }
 
 func commitChanges(gitRepositoryDir *string, message string, committedDir string) bool {
+	if !path.IsAbs(*gitRepositoryDir) || !path.IsAbs(committedDir) {
+		return false
+	}
+
 	output, err := execCommand(*gitRepositoryDir, "git", "add", committedDir)
 	if err != nil {
 		fmt.Printf("error staging changes %v\n%s", err, *output)
@@ -395,15 +407,15 @@ func commitChanges(gitRepositoryDir *string, message string, committedDir string
 	}
 
 	// if commit has been ok, we should be clean
-	return isGitRepositoryClean(gitRepositoryDir)
+	return isGitRepositoryClean(gitRepositoryDir, committedDir)
 }
 
 func (magic *MagicGitRepository) IsClean() (bool, interface{}) {
 	if magic.gitRepositoryDir != nil {
-		return isGitRepositoryClean(magic.gitRepositoryDir), nil
-	} else {
-		return true, nil
+		return magic.isGitRepositoryClean(), nil
 	}
+
+	return true, nil
 }
 
 func (magic *MagicGitRepository) GetStatus() (*string, interface{}) {
@@ -426,7 +438,7 @@ func (magic *MagicGitRepository) RenameIssue(name string, newName string) bool {
 	}
 
 	if magic.gitRepositoryDir != nil {
-		if !isGitRepositoryClean(magic.gitRepositoryDir) {
+		if !magic.isGitRepositoryClean() {
 			return false
 		}
 	}
@@ -462,7 +474,7 @@ func (magic *MagicGitRepository) AddIssue(name string) bool {
 	}
 
 	if magic.gitRepositoryDir != nil {
-		if !isGitRepositoryClean(magic.gitRepositoryDir) {
+		if !magic.isGitRepositoryClean() {
 			return false
 		}
 	}
@@ -505,7 +517,7 @@ func (magic *MagicGitRepository) DeleteIssue(name string) (bool, interface{}) {
 	}
 
 	if magic.gitRepositoryDir != nil {
-		if !isGitRepositoryClean(magic.gitRepositoryDir) {
+		if !magic.isGitRepositoryClean() {
 			return false, "git repository is dirty"
 		}
 	}
