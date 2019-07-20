@@ -14,10 +14,10 @@ run-serve:
 	go run main.go serve
 
 build-docker:
-	docker build . -t magic-git
+	docker build . -t git-docs
 
 run-serve-docker:
-	docker run -it --rm -v "$(shell pwd)":/usr/src/myapp -w /usr/src/myapp --user $(shell id -u):$(shell id -g) magic-git serve
+	docker run -it --rm -v "$(shell pwd)":/usr/src/myapp -w /usr/src/myapp --user $(shell id -u):$(shell id -g) git-docs serve
 
 run-docker-interactive:
-	docker run -it --rm -v "$(shell pwd)":/usr/src/myapp -w /usr/src/myapp --user $(shell id -u):$(shell id -g) --entrypoint sh magic-git
+	docker run -it --rm -v "$(shell pwd)":/usr/src/myapp -w /usr/src/myapp --user $(shell id -u):$(shell id -g) --entrypoint sh git-docs

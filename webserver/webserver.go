@@ -27,7 +27,7 @@ type IssueContext struct {
 }
 
 type WebServer struct {
-	magic *repository.GitDocsRepository
+	repo *repository.GitDocsRepository
 }
 
 type RenameIssueRequest struct {
@@ -131,12 +131,12 @@ type StatusResponse struct {
 }
 
 func handlerStatusRestAPI(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
-	status, err := server.magic.GetStatus()
+	status, err := server.repo.GetStatus()
 	if err != nil {
 		errorResponse(w, 500, "internal error")
 	}
 
-	clean, err := server.magic.IsClean()
+	clean, err := server.repo.IsClean()
 	if err != nil {
 		errorResponse(w, 500, "internal error")
 	}
@@ -144,14 +144,14 @@ func handlerStatusRestAPI(w http.ResponseWriter, r *http.Request, p httprouter.P
 	response := StatusResponse{
 		Clean:         clean,
 		Text:          *status,
-		GitRepository: *server.magic.GitRepositoryDir(),
+		GitRepository: *server.repo.GitRepositoryDir(),
 	}
 
 	jsonResponse(w, 200, response)
 }
 
 func handlerTagsRestAPI(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
-	tags, err := server.magic.GetAllTags()
+	tags, err := server.repo.GetAllTags()
 	if err != nil {
 		errorResponse(w, 500, "internal error")
 	} else {
@@ -161,14 +161,14 @@ func handlerTagsRestAPI(w http.ResponseWriter, r *http.Request, p httprouter.Par
 
 func handlerGetIssues(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
 	if r.URL.Query().Get("q") == "" {
-		issues, err := server.magic.GetIssues()
+		issues, err := server.repo.GetIssues()
 		if err != nil {
 			errorResponse(w, 500, "internal error")
 		} else {
 			jsonResponse(w, 200, issues)
 		}
 	} else {
-		issues, err := server.magic.SearchIssues(r.URL.Query().Get("q"))
+		issues, err := server.repo.SearchIssues(r.URL.Query().Get("q"))
 		if err != nil {
 			errorResponse(w, 500, "internal error")
 		} else {
@@ -180,7 +180,7 @@ func handlerGetIssues(w http.ResponseWriter, r *http.Request, p httprouter.Param
 func handlerGetIssueMetadata(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
 	name := p.ByName("issue_name")
 
-	metadata, err := server.magic.GetIssueMetadata(name)
+	metadata, err := server.repo.GetIssueMetadata(name)
 	if err != nil {
 		errorResponse(w, 404, "not found metadata")
 	} else {
@@ -191,7 +191,7 @@ func handlerGetIssueMetadata(w http.ResponseWriter, r *http.Request, p httproute
 func handlerGetIssueContent(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
 	name := p.ByName("issue_name")
 
-	content, err := server.magic.GetIssueContent(name)
+	content, err := server.repo.GetIssueContent(name)
 	if err != nil {
 		errorResponse(w, 404, "not found content")
 	} else {
@@ -215,7 +215,7 @@ func handlerGetIssueContent(w http.ResponseWriter, r *http.Request, p httprouter
 func handlerDeleteIssue(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
 	name := p.ByName("issue_name")
 
-	result, err := server.magic.DeleteIssue(name)
+	result, err := server.repo.DeleteIssue(name)
 	if err != nil {
 		errorResponse(w, 500, fmt.Sprintf("delete error : %v", err))
 	} else {
@@ -226,7 +226,7 @@ func handlerDeleteIssue(w http.ResponseWriter, r *http.Request, p httprouter.Par
 func handlerPostIssue(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
 	name := p.ByName("issue_name")
 
-	if server.magic.AddIssue(name) {
+	if server.repo.AddIssue(name) {
 		messageResponse(w, "issue added")
 	} else {
 		errorResponse(w, 500, "error (maybe already exists ?)")
@@ -246,7 +246,7 @@ func handlerPostIssueRename(w http.ResponseWriter, r *http.Request, p httprouter
 		if err != nil {
 			errorResponse(w, 400, "error malformatted json")
 		} else {
-			if server.magic.RenameIssue(name, request.Name) {
+			if server.repo.RenameIssue(name, request.Name) {
 				messageResponse(w, "issue renamed")
 			} else {
 				errorResponse(w, 500, "error")
@@ -269,7 +269,7 @@ func handlerPutIssueMetadata(w http.ResponseWriter, r *http.Request, p httproute
 		if err != nil {
 			errorResponse(w, 400, "error malformatted json")
 		} else {
-			ok, err := server.magic.SetIssueMetadata(name, metadata)
+			ok, err := server.repo.SetIssueMetadata(name, metadata)
 			if err != nil || !ok {
 				errorResponse(w, 400, "error setting metadata")
 			} else {
@@ -287,7 +287,7 @@ func handlerPutIssueContent(w http.ResponseWriter, r *http.Request, p httprouter
 	if err != nil {
 		errorResponse(w, 400, "error in body")
 	} else {
-		ok, err := server.magic.SetIssueContent(name, string(out))
+		ok, err := server.repo.SetIssueContent(name, string(out))
 		if err != nil || !ok {
 			errorResponse(w, 400, fmt.Sprintf("error setting content : %v", err))
 		} else {
@@ -305,9 +305,9 @@ func addHandler(pathPrefix string, fn func(http.ResponseWriter, *http.Request, s
 	http.HandleFunc(pathPrefix, handler)
 }
 
-func NewWebServer(magic *repository.GitDocsRepository) *WebServer {
+func NewWebServer(repo *repository.GitDocsRepository) *WebServer {
 	return &WebServer{
-		magic: magic,
+		repo: repo,
 	}
 }
 
@@ -332,7 +332,7 @@ func (self *WebServer) Init(router *httprouter.Router) {
 }
 
 /* Run runs the Web server... */
-func Run(magic *repository.GitDocsRepository) {
+func Run(repo *repository.GitDocsRepository) {
 	fmt.Println("starting web server")
 
 	router := httprouter.New()
@@ -340,7 +340,7 @@ func Run(magic *repository.GitDocsRepository) {
 		fmt.Printf("Failed to instantiate the router, exit\n")
 	}
 
-	server := NewWebServer(magic)
+	server := NewWebServer(repo)
 	server.Init(router)
 
 	log.Fatal(http.ListenAndServe("127.0.0.1:8080", router))

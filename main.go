@@ -30,7 +30,7 @@ func detectGitRootdirectory() *string {
 }
 
 func main() {
-	fmt.Printf("\nmagic-git, welcome\n\n")
+	fmt.Printf("\ngit-docs, welcome\n\n")
 
 	var printUsage = false
 	var help = flag.Bool("help", false, "show this help")
@@ -67,8 +67,8 @@ func main() {
 	fmt.Printf(" working in %s\n", *gitRepositoryDir)
 	fmt.Println()
 
-	magic := repository.NewGitDocsRepository(gitRepositoryDir, path.Join(*gitRepositoryDir, ".git-docs"))
-	ok := magic.EnsureWorkingSpaceReady()
+	repo := repository.NewGitDocsRepository(gitRepositoryDir, path.Join(*gitRepositoryDir, ".git-docs"))
+	ok := repo.EnsureWorkingSpaceReady()
 	if !ok {
 		fmt.Printf("ERROR cannot prepare working directory !\n")
 		return
@@ -78,7 +78,7 @@ func main() {
 	// execute the verb
 	switch verbs[0] {
 	case "serve":
-		webserver.Run(magic)
+		webserver.Run(repo)
 		break
 
 	case "issue":
@@ -97,15 +97,5 @@ func main() {
 	// * issue create  => opens a file with a template, creates the files, commit the changes, optionnally push
 	// * issue update ISSUE_ID   => same flow : file, modify the issue files, commit the changes, optionnally push
 
-	// option '-remoteUri=local' can be used to talk through the REST api of another magic-git server (http://...)
-
-	// parse command line
-	// detect being in a git repository
-	// detect the git repository root path
-	// ensure .magic-git/ is initialized (issues/, tmp/)
-	// instantiate a remote or local (depending on the options) main application code
-	// execute action for each mode (serve, issues)
-	// - serve listens on TCP
-	// - issues and other commands alike use either direct local filesystem or the REST api, if specified in options
-	// quit
+	// option '-remoteUri=local' can be used to talk through the REST api of another git-docs server (http://...)
 }

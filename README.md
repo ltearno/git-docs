@@ -1,10 +1,10 @@
-# Magic Git
+# Git Docs
 
 Make git tools working offline :
 - issue management,
 - ...
 
-Magic Git is a little tool (web server rest + ui, and a cli) to manage your project's task event offline.
+Git Docs is a little tool (web server rest + ui, and a cli) to manage your project's task event offline.
 
 All data are stored in the git repository itself.
 
