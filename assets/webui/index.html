@@ -353,6 +353,16 @@
         function loadIssues() {
             let search = el('search-issue').value || null
             let columns = (el('columns-issue').value || '').split(",").map(v => v.trim())
+
+            if (search)
+                localStorage.setItem('search-issue', search)
+            else
+                localStorage.removeItem('search-issue')
+            if (columns)
+                localStorage.setItem('columns-issue', columns)
+            else
+                localStorage.removeItem('columns-issue')
+
             if (!columns.length)
                 columns.push(null)
 
@@ -406,14 +416,12 @@
                     .catch(err => log(`loadIssues failed`))
             }
 
-            if (!search) {
-                fetch("/api/tags")
-                    .then(response => response.json())
-                    .then(tags => {
-                        el('tagsList').innerHTML = "All tags : " + tags.map(tagToHtmlBadge).join('')
-                    })
-                    .catch(err => log(`loadTags failed`))
-            }
+            fetch("/api/tags")
+                .then(response => response.json())
+                .then(tags => {
+                    el('tagsList').innerHTML = "All tags : " + tags.map(tagToHtmlBadge).join('')
+                })
+                .catch(err => log(`loadTags failed`))
         }
 
         function loadStatus() {
@@ -453,6 +461,9 @@
         }
 
         function installUi() {
+            el('search-issue').value = localStorage.getItem('search-issue') || null
+            el('columns-issue').value = localStorage.getItem('columns-issue') || null
+
             let loadIssuesTriggered = false
             const maybeLoadIssues = () => {
                 if (loadIssuesTriggered)
