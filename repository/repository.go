@@ -216,9 +216,9 @@ func contains(s []string, e string) bool {
 	return false
 }
 
-func (repo *GitDocsRepository) ensureCategoryDirectoryReady(category string) bool {
-	if !tools.ExistsFile(repo.getDocumentsPath(category)) {
-		err := os.Mkdir(repo.getDocumentsPath(category), 0755)
+func (repo *GitDocsRepository) ensureDirectoryReady(path string) bool {
+	if !tools.ExistsFile(path) {
+		err := os.MkdirAll(path, 0755)
 		if err != nil {
 			fmt.Printf("error creating working dir %v\n!\n", err)
 			return false
@@ -226,6 +226,10 @@ func (repo *GitDocsRepository) ensureCategoryDirectoryReady(category string) boo
 	}
 
 	return true
+}
+
+func (repo *GitDocsRepository) ensureCategoryDirectoryReady(category string) bool {
+	return repo.ensureDirectoryReady(repo.getDocumentsPath(category))
 }
 
 func (repo *GitDocsRepository) AddCategory(name string) (bool, interface{}) {
