@@ -511,11 +511,6 @@ func (magic *MagicGitRepository) EnsureWorkingSpaceReady() bool {
 			fmt.Printf("ERROR %v\n!\n", err)
 			return false
 		}
-
-		err = os.Mkdir(path.Join(magic.workingDir, "tmp"), 0755)
-		if err != nil {
-			return false
-		}
 	}
 
 	return true
