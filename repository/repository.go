@@ -194,6 +194,60 @@ func (repo *GitDocsRepository) SearchDocuments(q string) ([]string, interface{})
 	return result, nil
 }
 
+func (repo *GitDocsRepository) getCategoriesFilePath() string {
+	return path.Join(repo.workingDir, ".git-docs-categories.json")
+}
+
+func (repo *GitDocsRepository) GetCategories() []string {
+	categories := []string{}
+
+	filePath := repo.getCategoriesFilePath()
+	readFileJson(filePath, &categories)
+
+	return categories
+}
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+func (repo *GitDocsRepository) ensureCategoryDirectoryReady(category string) bool {
+	if !tools.ExistsFile(repo.getDocumentsPath()) {
+		err := os.Mkdir(repo.getDocumentsPath(), 0755)
+		if err != nil {
+			fmt.Printf("error creating working dir %v\n!\n", err)
+			return false
+		}
+	}
+
+	return true
+}
+
+func (repo *GitDocsRepository) AddCategory(name string) (bool, interface{}) {
+	categories := repo.GetCategories()
+	if contains(categories, name) {
+		return true, nil
+	}
+
+	categories = append(categories, name)
+	ok := writeFileJson(repo.getCategoriesFilePath(), categories)
+	if !ok {
+		return false, "error write file"
+	}
+
+	ok = repo.ensureCategoryDirectoryReady(name)
+	if !ok {
+		return false, "error init directory"
+	}
+
+	return true, nil
+}
+
 func (repo *GitDocsRepository) getDocumentsPath() string {
 	return path.Join(repo.workingDir, "issues")
 }
@@ -537,16 +591,4 @@ func (repo *GitDocsRepository) DeleteDocument(name string) (bool, interface{}) {
 	}
 
 	return true, nil
-}
-
-func (repo *GitDocsRepository) EnsureWorkingSpaceReady() bool {
-	if !tools.ExistsFile(repo.workingDir) {
-		err := os.Mkdir(repo.getDocumentsPath(), 0755)
-		if err != nil {
-			fmt.Printf("error creating working dir %v\n!\n", err)
-			return false
-		}
-	}
-
-	return true
 }
