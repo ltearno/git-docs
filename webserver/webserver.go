@@ -27,7 +27,7 @@ type IssueContext struct {
 }
 
 type WebServer struct {
-	magic *repository.MagicGitRepository
+	magic *repository.GitDocsRepository
 }
 
 type RenameIssueRequest struct {
@@ -305,7 +305,7 @@ func addHandler(pathPrefix string, fn func(http.ResponseWriter, *http.Request, s
 	http.HandleFunc(pathPrefix, handler)
 }
 
-func NewWebServer(magic *repository.MagicGitRepository) *WebServer {
+func NewWebServer(magic *repository.GitDocsRepository) *WebServer {
 	return &WebServer{
 		magic: magic,
 	}
@@ -332,7 +332,7 @@ func (self *WebServer) Init(router *httprouter.Router) {
 }
 
 /* Run runs the Web server... */
-func Run(magic *repository.MagicGitRepository) {
+func Run(magic *repository.GitDocsRepository) {
 	fmt.Println("starting web server")
 
 	router := httprouter.New()

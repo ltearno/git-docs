@@ -67,7 +67,7 @@ func main() {
 	fmt.Printf(" working in %s\n", *gitRepositoryDir)
 	fmt.Println()
 
-	magic := repository.NewMagicGitRepository(gitRepositoryDir, path.Join(*gitRepositoryDir, ".git-docs"))
+	magic := repository.NewGitDocsRepository(gitRepositoryDir, path.Join(*gitRepositoryDir, ".git-docs"))
 	ok := magic.EnsureWorkingSpaceReady()
 	if !ok {
 		fmt.Printf("ERROR cannot prepare working directory !\n")

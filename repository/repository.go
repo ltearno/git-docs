@@ -14,7 +14,7 @@ import (
 	"../tools"
 )
 
-type MagicGitRepository struct {
+type GitDocsRepository struct {
 	gitRepositoryDir *string
 	workingDir       string
 }
@@ -23,19 +23,19 @@ type IssueMetadata struct {
 	Tags []string `json:"tags"`
 }
 
-func NewMagicGitRepository(gitRepositoryDir *string, workingDir string) *MagicGitRepository {
-	return &MagicGitRepository{
+func NewGitDocsRepository(gitRepositoryDir *string, workingDir string) *GitDocsRepository {
+	return &GitDocsRepository{
 		gitRepositoryDir,
 		workingDir,
 	}
 }
 
-func (magic *MagicGitRepository) GitRepositoryDir() *string {
-	return magic.gitRepositoryDir
+func (repo *GitDocsRepository) GitRepositoryDir() *string {
+	return repo.gitRepositoryDir
 }
 
-func (magic *MagicGitRepository) GetIssues() ([]string, interface{}) {
-	files, err := ioutil.ReadDir(magic.getIssuesPath())
+func (repo *GitDocsRepository) GetIssues() ([]string, interface{}) {
+	files, err := ioutil.ReadDir(repo.getIssuesPath())
 	if err != nil {
 		return nil, "cannot read dir"
 	}
@@ -111,8 +111,8 @@ func readFile(path string) ([]byte, interface{}) {
 	return content, nil
 }
 
-func (magic *MagicGitRepository) GetAllTags() ([]string, interface{}) {
-	issues, err := magic.GetIssues()
+func (repo *GitDocsRepository) GetAllTags() ([]string, interface{}) {
+	issues, err := repo.GetIssues()
 	if err != nil {
 		return nil, "cannot get issues"
 	}
@@ -121,7 +121,7 @@ func (magic *MagicGitRepository) GetAllTags() ([]string, interface{}) {
 	var result = []string{}
 
 	for _, issue := range issues {
-		metadata, err := magic.GetIssueMetadata(issue)
+		metadata, err := repo.GetIssueMetadata(issue)
 		if err != nil {
 			return result, "cannot load one metadata"
 		}
@@ -171,8 +171,8 @@ func issueMatchSearch(metadata *IssueMetadata, q string) bool {
 	}
 }
 
-func (magic *MagicGitRepository) SearchIssues(q string) ([]string, interface{}) {
-	issues, err := magic.GetIssues()
+func (repo *GitDocsRepository) SearchIssues(q string) ([]string, interface{}) {
+	issues, err := repo.GetIssues()
 	if err != nil {
 		return nil, "cannot get issues"
 	}
@@ -181,7 +181,7 @@ func (magic *MagicGitRepository) SearchIssues(q string) ([]string, interface{}) 
 	var result = []string{}
 
 	for _, issue := range issues {
-		metadata, err := magic.GetIssueMetadata(issue)
+		metadata, err := repo.GetIssueMetadata(issue)
 		if err != nil {
 			return result, "cannot load one metadata"
 		}
@@ -194,24 +194,24 @@ func (magic *MagicGitRepository) SearchIssues(q string) ([]string, interface{}) 
 	return result, nil
 }
 
-func (magic *MagicGitRepository) getIssuesPath() string {
-	return path.Join(magic.workingDir, "issues")
+func (repo *GitDocsRepository) getIssuesPath() string {
+	return path.Join(repo.workingDir, "issues")
 }
 
-func (magic *MagicGitRepository) getIssueDirPath(name string) string {
-	return path.Join(magic.getIssuesPath(), name)
+func (repo *GitDocsRepository) getIssueDirPath(name string) string {
+	return path.Join(repo.getIssuesPath(), name)
 }
 
-func (magic *MagicGitRepository) getIssueMetadataFilePath(name string) string {
-	return path.Join(magic.getIssueDirPath(name), "metadata.json")
+func (repo *GitDocsRepository) getIssueMetadataFilePath(name string) string {
+	return path.Join(repo.getIssueDirPath(name), "metadata.json")
 }
 
-func (magic *MagicGitRepository) getIssueContentFilePath(name string) string {
-	return path.Join(magic.getIssueDirPath(name), "content.md")
+func (repo *GitDocsRepository) getIssueContentFilePath(name string) string {
+	return path.Join(repo.getIssueDirPath(name), "content.md")
 }
 
-func (magic *MagicGitRepository) GetIssueContent(name string) (*string, interface{}) {
-	filePath := magic.getIssueContentFilePath(name)
+func (repo *GitDocsRepository) GetIssueContent(name string) (*string, interface{}) {
+	filePath := repo.getIssueContentFilePath(name)
 	bytes, err := readFile(filePath)
 	if err != nil {
 		return nil, "no content"
@@ -222,18 +222,18 @@ func (magic *MagicGitRepository) GetIssueContent(name string) (*string, interfac
 	return &content, nil
 }
 
-func (magic *MagicGitRepository) SetIssueContent(name string, content string) (bool, interface{}) {
+func (repo *GitDocsRepository) SetIssueContent(name string, content string) (bool, interface{}) {
 	if strings.Contains(name, "/") {
 		return false, "invalid name"
 	}
 
-	if magic.gitRepositoryDir != nil {
-		if !magic.isGitRepositoryClean() {
+	if repo.gitRepositoryDir != nil {
+		if !repo.isGitRepositoryClean() {
 			return false, "repository is dirty"
 		}
 	}
 
-	currentContent, err := magic.GetIssueContent(name)
+	currentContent, err := repo.GetIssueContent(name)
 	if err != nil {
 		return false, "cannot read issue content"
 	}
@@ -242,14 +242,14 @@ func (magic *MagicGitRepository) SetIssueContent(name string, content string) (b
 		return true, nil
 	}
 
-	filePath := magic.getIssueContentFilePath(name)
+	filePath := repo.getIssueContentFilePath(name)
 	ok := writeFile(filePath, content)
 	if !ok {
 		return false, "error"
 	}
 
-	if magic.gitRepositoryDir != nil {
-		ok = commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - updated issue content %s", name), magic.workingDir)
+	if repo.gitRepositoryDir != nil {
+		ok = commitChanges(repo.gitRepositoryDir, fmt.Sprintf("issues() - updated issue content %s", name), repo.workingDir)
 		if !ok {
 			return false, "commit error"
 		}
@@ -258,8 +258,8 @@ func (magic *MagicGitRepository) SetIssueContent(name string, content string) (b
 	return true, nil
 }
 
-func (magic *MagicGitRepository) GetIssueMetadata(name string) (*IssueMetadata, interface{}) {
-	filePath := magic.getIssueMetadataFilePath(name)
+func (repo *GitDocsRepository) GetIssueMetadata(name string) (*IssueMetadata, interface{}) {
+	filePath := repo.getIssueMetadataFilePath(name)
 	bytes, err := readFile(filePath)
 	if err != nil {
 		return nil, "no content"
@@ -275,13 +275,13 @@ func (magic *MagicGitRepository) GetIssueMetadata(name string) (*IssueMetadata, 
 	return result, nil
 }
 
-func (magic *MagicGitRepository) SetIssueMetadata(name string, metadata *IssueMetadata) (bool, interface{}) {
+func (repo *GitDocsRepository) SetIssueMetadata(name string, metadata *IssueMetadata) (bool, interface{}) {
 	if strings.Contains(name, "/") {
 		return false, "invalid name"
 	}
 
-	if magic.gitRepositoryDir != nil {
-		if !magic.isGitRepositoryClean() {
+	if repo.gitRepositoryDir != nil {
+		if !repo.isGitRepositoryClean() {
 			return false, "repository is dirty"
 		}
 	}
@@ -291,14 +291,14 @@ func (magic *MagicGitRepository) SetIssueMetadata(name string, metadata *IssueMe
 		return false, "json error"
 	}
 
-	filePath := magic.getIssueMetadataFilePath(name)
+	filePath := repo.getIssueMetadataFilePath(name)
 	ok := writeFile(filePath, string(bytes))
 	if !ok {
 		return false, "write file error"
 	}
 
-	if magic.gitRepositoryDir != nil {
-		ok = commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - updated issue metadata %s", name), magic.workingDir)
+	if repo.gitRepositoryDir != nil {
+		ok = commitChanges(repo.gitRepositoryDir, fmt.Sprintf("issues() - updated issue metadata %s", name), repo.workingDir)
 		if !ok {
 			return false, "commit error"
 		}
@@ -310,8 +310,8 @@ func (magic *MagicGitRepository) SetIssueMetadata(name string, metadata *IssueMe
 // list of authors, with their rank on first part of each line :
 // git shortlog -sne --all
 
-func (magic *MagicGitRepository) isGitRepositoryClean() bool {
-	return isGitRepositoryClean(magic.gitRepositoryDir, magic.workingDir)
+func (repo *GitDocsRepository) isGitRepositoryClean() bool {
+	return isGitRepositoryClean(repo.gitRepositoryDir, repo.workingDir)
 }
 
 func isGitRepositoryClean(gitDir *string, workingDir string) bool {
@@ -410,17 +410,17 @@ func commitChanges(gitRepositoryDir *string, message string, committedDir string
 	return isGitRepositoryClean(gitRepositoryDir, committedDir)
 }
 
-func (magic *MagicGitRepository) IsClean() (bool, interface{}) {
-	if magic.gitRepositoryDir != nil {
-		return magic.isGitRepositoryClean(), nil
+func (repo *GitDocsRepository) IsClean() (bool, interface{}) {
+	if repo.gitRepositoryDir != nil {
+		return repo.isGitRepositoryClean(), nil
 	}
 
 	return true, nil
 }
 
-func (magic *MagicGitRepository) GetStatus() (*string, interface{}) {
-	if magic.gitRepositoryDir != nil {
-		output, err := execCommand(*magic.gitRepositoryDir, "git", "status")
+func (repo *GitDocsRepository) GetStatus() (*string, interface{}) {
+	if repo.gitRepositoryDir != nil {
+		output, err := execCommand(*repo.gitRepositoryDir, "git", "status")
 		if err != nil {
 			return nil, err
 		}
@@ -432,23 +432,23 @@ func (magic *MagicGitRepository) GetStatus() (*string, interface{}) {
 	return &res, nil
 }
 
-func (magic *MagicGitRepository) RenameIssue(name string, newName string) bool {
+func (repo *GitDocsRepository) RenameIssue(name string, newName string) bool {
 	if strings.Contains(name, "/") {
 		return false
 	}
 
-	if magic.gitRepositoryDir != nil {
-		if !magic.isGitRepositoryClean() {
+	if repo.gitRepositoryDir != nil {
+		if !repo.isGitRepositoryClean() {
 			return false
 		}
 	}
 
-	issueDir := magic.getIssueDirPath(name)
+	issueDir := repo.getIssueDirPath(name)
 	if !tools.ExistsFile(issueDir) {
 		return false
 	}
 
-	newIssueDir := magic.getIssueDirPath(newName)
+	newIssueDir := repo.getIssueDirPath(newName)
 	if tools.ExistsFile(newIssueDir) {
 		return false
 	}
@@ -458,8 +458,8 @@ func (magic *MagicGitRepository) RenameIssue(name string, newName string) bool {
 		return false
 	}
 
-	if magic.gitRepositoryDir != nil {
-		ok := commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - renamed issue %s to %s", name, newIssueDir), magic.workingDir)
+	if repo.gitRepositoryDir != nil {
+		ok := commitChanges(repo.gitRepositoryDir, fmt.Sprintf("issues() - renamed issue %s to %s", name, newIssueDir), repo.workingDir)
 		if !ok {
 			return false
 		}
@@ -468,25 +468,25 @@ func (magic *MagicGitRepository) RenameIssue(name string, newName string) bool {
 	return true
 }
 
-func (magic *MagicGitRepository) AddIssue(name string) bool {
+func (repo *GitDocsRepository) AddIssue(name string) bool {
 	if strings.Contains(name, "/") {
 		return false
 	}
 
-	if magic.gitRepositoryDir != nil {
-		if !magic.isGitRepositoryClean() {
+	if repo.gitRepositoryDir != nil {
+		if !repo.isGitRepositoryClean() {
 			return false
 		}
 	}
 
-	issueDir := magic.getIssueDirPath(name)
+	issueDir := repo.getIssueDirPath(name)
 	if tools.ExistsFile(issueDir) {
 		return false
 	}
 
 	os.Mkdir(issueDir, 0755)
 
-	ok := writeFileJson(magic.getIssueMetadataFilePath(name), IssueMetadata{Tags: []string{}})
+	ok := writeFileJson(repo.getIssueMetadataFilePath(name), IssueMetadata{Tags: []string{}})
 	if !ok {
 		return false
 	}
@@ -496,13 +496,13 @@ func (magic *MagicGitRepository) AddIssue(name string) bool {
 		return false
 	}
 
-	ok = writeFile(magic.getIssueContentFilePath(name), string(issueContentModelBytes))
+	ok = writeFile(repo.getIssueContentFilePath(name), string(issueContentModelBytes))
 	if !ok {
 		return false
 	}
 
-	if magic.gitRepositoryDir != nil {
-		ok = commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - added issue %s", name), magic.workingDir)
+	if repo.gitRepositoryDir != nil {
+		ok = commitChanges(repo.gitRepositoryDir, fmt.Sprintf("issues() - added issue %s", name), repo.workingDir)
 		if !ok {
 			return false
 		}
@@ -511,26 +511,26 @@ func (magic *MagicGitRepository) AddIssue(name string) bool {
 	return true
 }
 
-func (magic *MagicGitRepository) DeleteIssue(name string) (bool, interface{}) {
+func (repo *GitDocsRepository) DeleteIssue(name string) (bool, interface{}) {
 	if strings.Contains(name, "/") {
 		return false, "'/' is forbidden in names"
 	}
 
-	if magic.gitRepositoryDir != nil {
-		if !magic.isGitRepositoryClean() {
+	if repo.gitRepositoryDir != nil {
+		if !repo.isGitRepositoryClean() {
 			return false, "git repository is dirty"
 		}
 	}
 
-	issueDir := magic.getIssueDirPath(name)
+	issueDir := repo.getIssueDirPath(name)
 	if !tools.ExistsFile(issueDir) {
 		return false, "issue does not exists"
 	}
 
 	os.RemoveAll(issueDir)
 
-	if magic.gitRepositoryDir != nil {
-		ok := commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - deleted issue %s", name), magic.workingDir)
+	if repo.gitRepositoryDir != nil {
+		ok := commitChanges(repo.gitRepositoryDir, fmt.Sprintf("issues() - deleted issue %s", name), repo.workingDir)
 		if !ok {
 			return false, false
 		}
@@ -539,16 +539,16 @@ func (magic *MagicGitRepository) DeleteIssue(name string) (bool, interface{}) {
 	return true, nil
 }
 
-func (magic *MagicGitRepository) EnsureWorkingSpaceReady() bool {
-	if !tools.ExistsFile(magic.workingDir) {
-		err := os.Mkdir(magic.workingDir, 0755)
+func (repo *GitDocsRepository) EnsureWorkingSpaceReady() bool {
+	if !tools.ExistsFile(repo.workingDir) {
+		err := os.Mkdir(repo.workingDir, 0755)
 		if err != nil {
 			return false
 		}
 	}
 
-	if !tools.ExistsFile(magic.workingDir) {
-		err := os.Mkdir(magic.getIssuesPath(), 0755)
+	if !tools.ExistsFile(repo.workingDir) {
+		err := os.Mkdir(repo.getIssuesPath(), 0755)
 		if err != nil {
 			fmt.Printf("ERROR %v\n!\n", err)
 			return false
