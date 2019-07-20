@@ -34,8 +34,8 @@ func (repo *GitDocsRepository) GitRepositoryDir() *string {
 	return repo.gitRepositoryDir
 }
 
-func (repo *GitDocsRepository) GetIssues() ([]string, interface{}) {
-	files, err := ioutil.ReadDir(repo.getIssuesPath())
+func (repo *GitDocsRepository) GetDocuments() ([]string, interface{}) {
+	files, err := ioutil.ReadDir(repo.getDocumentsPath())
 	if err != nil {
 		return nil, "cannot read dir"
 	}
@@ -112,15 +112,15 @@ func readFile(path string) ([]byte, interface{}) {
 }
 
 func (repo *GitDocsRepository) GetAllTags() ([]string, interface{}) {
-	issues, err := repo.GetIssues()
+	documents, err := repo.GetDocuments()
 	if err != nil {
-		return nil, "cannot get issues"
+		return nil, "cannot get documents"
 	}
 
 	tagSet := map[string]bool{}
 	var result = []string{}
 
-	for _, issue := range issues {
+	for _, issue := range documents {
 		metadata, err := repo.GetIssueMetadata(issue)
 		if err != nil {
 			return result, "cannot load one metadata"
@@ -171,16 +171,16 @@ func issueMatchSearch(metadata *IssueMetadata, q string) bool {
 	}
 }
 
-func (repo *GitDocsRepository) SearchIssues(q string) ([]string, interface{}) {
-	issues, err := repo.GetIssues()
+func (repo *GitDocsRepository) SearchDocuments(q string) ([]string, interface{}) {
+	documents, err := repo.GetDocuments()
 	if err != nil {
-		return nil, "cannot get issues"
+		return nil, "cannot get documents"
 	}
 
 	q = strings.ToLower(q)
 	var result = []string{}
 
-	for _, issue := range issues {
+	for _, issue := range documents {
 		metadata, err := repo.GetIssueMetadata(issue)
 		if err != nil {
 			return result, "cannot load one metadata"
@@ -194,12 +194,12 @@ func (repo *GitDocsRepository) SearchIssues(q string) ([]string, interface{}) {
 	return result, nil
 }
 
-func (repo *GitDocsRepository) getIssuesPath() string {
+func (repo *GitDocsRepository) getDocumentsPath() string {
 	return path.Join(repo.workingDir, "issues")
 }
 
 func (repo *GitDocsRepository) getIssueDirPath(name string) string {
-	return path.Join(repo.getIssuesPath(), name)
+	return path.Join(repo.getDocumentsPath(), name)
 }
 
 func (repo *GitDocsRepository) getIssueMetadataFilePath(name string) string {
@@ -249,7 +249,7 @@ func (repo *GitDocsRepository) SetIssueContent(name string, content string) (boo
 	}
 
 	if repo.gitRepositoryDir != nil {
-		ok = commitChanges(repo.gitRepositoryDir, fmt.Sprintf("issues() - updated issue content %s", name), repo.workingDir)
+		ok = commitChanges(repo.gitRepositoryDir, fmt.Sprintf("documents() - updated issue content %s", name), repo.workingDir)
 		if !ok {
 			return false, "commit error"
 		}
@@ -298,7 +298,7 @@ func (repo *GitDocsRepository) SetIssueMetadata(name string, metadata *IssueMeta
 	}
 
 	if repo.gitRepositoryDir != nil {
-		ok = commitChanges(repo.gitRepositoryDir, fmt.Sprintf("issues() - updated issue metadata %s", name), repo.workingDir)
+		ok = commitChanges(repo.gitRepositoryDir, fmt.Sprintf("documents() - updated issue metadata %s", name), repo.workingDir)
 		if !ok {
 			return false, "commit error"
 		}
@@ -459,7 +459,7 @@ func (repo *GitDocsRepository) RenameIssue(name string, newName string) bool {
 	}
 
 	if repo.gitRepositoryDir != nil {
-		ok := commitChanges(repo.gitRepositoryDir, fmt.Sprintf("issues() - renamed issue %s to %s", name, newIssueDir), repo.workingDir)
+		ok := commitChanges(repo.gitRepositoryDir, fmt.Sprintf("documents() - renamed issue %s to %s", name, newIssueDir), repo.workingDir)
 		if !ok {
 			return false
 		}
@@ -502,7 +502,7 @@ func (repo *GitDocsRepository) AddIssue(name string) bool {
 	}
 
 	if repo.gitRepositoryDir != nil {
-		ok = commitChanges(repo.gitRepositoryDir, fmt.Sprintf("issues() - added issue %s", name), repo.workingDir)
+		ok = commitChanges(repo.gitRepositoryDir, fmt.Sprintf("documents() - added issue %s", name), repo.workingDir)
 		if !ok {
 			return false
 		}
@@ -530,7 +530,7 @@ func (repo *GitDocsRepository) DeleteIssue(name string) (bool, interface{}) {
 	os.RemoveAll(issueDir)
 
 	if repo.gitRepositoryDir != nil {
-		ok := commitChanges(repo.gitRepositoryDir, fmt.Sprintf("issues() - deleted issue %s", name), repo.workingDir)
+		ok := commitChanges(repo.gitRepositoryDir, fmt.Sprintf("documents() - deleted issue %s", name), repo.workingDir)
 		if !ok {
 			return false, false
 		}
@@ -541,16 +541,9 @@ func (repo *GitDocsRepository) DeleteIssue(name string) (bool, interface{}) {
 
 func (repo *GitDocsRepository) EnsureWorkingSpaceReady() bool {
 	if !tools.ExistsFile(repo.workingDir) {
-		err := os.Mkdir(repo.workingDir, 0755)
+		err := os.Mkdir(repo.getDocumentsPath(), 0755)
 		if err != nil {
-			return false
-		}
-	}
-
-	if !tools.ExistsFile(repo.workingDir) {
-		err := os.Mkdir(repo.getIssuesPath(), 0755)
-		if err != nil {
-			fmt.Printf("ERROR %v\n!\n", err)
+			fmt.Printf("error creating working dir %v\n!\n", err)
 			return false
 		}
 	}
