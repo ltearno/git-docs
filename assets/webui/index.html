@@ -6,7 +6,6 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="mui-0.9.42/css/mui.css" rel="stylesheet" type="text/css" />
-    <!--<link href="mui-0.9.42/extra/mui-rem.css" rel="stylesheet"  type="text/css"/>-->
     <link href="index.css" rel="stylesheet" type="text/css" />
     <script src="mui-0.9.42/js/mui.js"></script>
     <script src="marked.min.js"></script>
@@ -222,7 +221,7 @@
 
             documentElement.querySelector('#name-input').value = name
 
-            fetch(`/api/documents/${name}/content`)
+            fetch(`/api/documents/issues/${name}/content`)
                 .then(response => response.text())
                 .then(content => contentElement.innerHTML += `<textarea class='document-content-textarea' style='width:80em;height:30em;'>${content}</textarea>`)
                 .catch(err => log(`get content for ${name} failed`))
@@ -239,7 +238,7 @@
                 const newName = documentElement.querySelector('#name-input').value
                 if (newName != name) {
                     waitCount++
-                    postData(`/api/documents/${name}/rename`, { name: newName })
+                    postData(`/api/documents/issues/${name}/rename`, { name: newName })
                         .then(_ => {
                             log(`renamed document ${name}`)
                             maybeReload(newName)
@@ -250,7 +249,7 @@
                 const newContent = documentElement.getElementsByClassName('document-content-textarea').item(0).value
                 if (newContent) {
                     waitCount++
-                    putData(`/api/documents/${name}/content`, newContent)
+                    putData(`/api/documents/issues/${name}/content`, newContent)
                         .then(_ => {
                             log(`updated document ${name} content`)
                             maybeReload(newName)
@@ -266,7 +265,7 @@
         }
 
         function addTagToDocument(name, tagToAdd) {
-            fetch(`/api/documents/${name}/metadata`)
+            fetch(`/api/documents/issues/${name}/metadata`)
                 .then(response => response.json())
                 .then(metadata => {
                     let update = false
@@ -288,7 +287,7 @@
 
                     if (update) {
                         // update metadata
-                        putData(`/api/documents/${name}/metadata`, metadata)
+                        putData(`/api/documents/issues/${name}/metadata`, metadata)
                             .then(_ => {
                                 log(`update document metadata ${name}`)
                                 reloadWithDocument(name)
@@ -331,7 +330,7 @@
 
             el('board-opened-documents').appendChild(documentElement)
 
-            fetch(`/api/documents/${name}/metadata`)
+            fetch(`/api/documents/issues/${name}/metadata`)
                 .then(response => response.json())
                 .then(metadata => {
                     if (metadata && metadata.tags) {
@@ -343,7 +342,7 @@
                 })
                 .catch(err => log(`get metadata for ${name} failed`))
 
-            fetch(`/api/documents/${name}/content?interpolated=true`)
+            fetch(`/api/documents/issues/${name}/content?interpolated=true`)
                 .then(response => response.text())
                 .then(content => {
                     contentElement.innerHTML += marked(content)
@@ -381,7 +380,7 @@
                     columnElement.style.marginLeft = '1em'
                 columnsElement.appendChild(columnElement)
 
-                fetch(q ? `/api/documents/?q=${encodeURIComponent(q)}` : "/api/documents")
+                fetch(q ? `/api/documents/issues/?q=${encodeURIComponent(q)}` : "/api/documents/issues")
                     .then(response => response.json())
                     .then(documents => {
                         let prep = documents.map(name => `<div><span onclick='showDocument("${name}")'>${name}</span>&nbsp;<span x-id='tags'></span>&nbsp;&nbsp;&nbsp;<button onclick='deleteDocument("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
@@ -398,7 +397,7 @@
                             let loadedDocumentTags = documentToFetchTags++
                             let name = documents[loadedDocumentTags]
 
-                            fetch(`/api/documents/${name}/metadata`)
+                            fetch(`/api/documents/issues/${name}/metadata`)
                                 .then(response => response.json())
                                 .then(metadata => {
                                     if (metadata && metadata.tags)
@@ -421,7 +420,7 @@
         }
 
         function loadTags() {
-            fetch("/api/tags")
+            fetch("/api/tags/issues")
                 .then(response => response.json())
                 .then(tags => {
                     el('tagsList').innerHTML = "All tags : " + tags.map(tagToHtmlBadge).join('')
@@ -430,7 +429,7 @@
         }
 
         function loadStatus() {
-            fetch("/api/status")
+            fetch("/api/status/issues")
                 .then(response => response.json())
                 .then(status => {
                     el('board-status').innerHTML = `repository: ${status.gitRepository}<br/>`
@@ -448,7 +447,7 @@
         }
 
         function deleteDocument(name) {
-            deleteData(`/api/documents/${name}`)
+            deleteData(`/api/documents/issues/${name}`)
                 .then(_ => {
                     log(`delete document ${name}`)
                     reloadWithDocument(null)
@@ -457,7 +456,7 @@
         }
 
         function addDocument(name) {
-            postData(`/api/documents/${name}`, {})
+            postData(`/api/documents/issues/${name}`, {})
                 .then(_ => {
                     log(`add document ${name}`)
                     reloadWithDocument(name)

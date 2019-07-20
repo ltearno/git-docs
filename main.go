@@ -68,12 +68,6 @@ func main() {
 	fmt.Println()
 
 	repo := repository.NewGitDocsRepository(gitRepositoryDir, path.Join(*gitRepositoryDir, ".git-docs"))
-	ok := repo.EnsureWorkingSpaceReady()
-	if !ok {
-		fmt.Printf("ERROR cannot prepare working directory !\n")
-		return
-	}
-	// TODO ensure we have a working git repo and data directory is ready
 
 	// execute the verb
 	switch verbs[0] {

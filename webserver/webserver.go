@@ -151,7 +151,9 @@ func handlerStatusRestAPI(w http.ResponseWriter, r *http.Request, p httprouter.P
 }
 
 func handlerTagsRestAPI(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
-	tags, err := server.repo.GetAllTags()
+	category := p.ByName("category_name")
+
+	tags, err := server.repo.GetAllTags(category)
 	if err != nil {
 		errorResponse(w, 500, "internal error")
 	} else {
@@ -160,15 +162,17 @@ func handlerTagsRestAPI(w http.ResponseWriter, r *http.Request, p httprouter.Par
 }
 
 func handlerGetDocuments(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	category := p.ByName("category_name")
+
 	if r.URL.Query().Get("q") == "" {
-		documents, err := server.repo.GetDocuments()
+		documents, err := server.repo.GetDocuments(category)
 		if err != nil {
 			errorResponse(w, 500, "internal error")
 		} else {
 			jsonResponse(w, 200, documents)
 		}
 	} else {
-		documents, err := server.repo.SearchDocuments(r.URL.Query().Get("q"))
+		documents, err := server.repo.SearchDocuments(category, r.URL.Query().Get("q"))
 		if err != nil {
 			errorResponse(w, 500, "internal error")
 		} else {
@@ -178,9 +182,10 @@ func handlerGetDocuments(w http.ResponseWriter, r *http.Request, p httprouter.Pa
 }
 
 func handlerGetDocumentMetadata(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	category := p.ByName("category_name")
 	name := p.ByName("document_name")
 
-	metadata, err := server.repo.GetDocumentMetadata(name)
+	metadata, err := server.repo.GetDocumentMetadata(category, name)
 	if err != nil {
 		errorResponse(w, 404, "not found metadata")
 	} else {
@@ -189,9 +194,10 @@ func handlerGetDocumentMetadata(w http.ResponseWriter, r *http.Request, p httpro
 }
 
 func handlerGetDocumentContent(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	category := p.ByName("category_name")
 	name := p.ByName("document_name")
 
-	content, err := server.repo.GetDocumentContent(name)
+	content, err := server.repo.GetDocumentContent(category, name)
 	if err != nil {
 		errorResponse(w, 404, "not found content")
 	} else {
@@ -213,9 +219,10 @@ func handlerGetDocumentContent(w http.ResponseWriter, r *http.Request, p httprou
 }
 
 func handlerDeleteDocument(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	category := p.ByName("category_name")
 	name := p.ByName("document_name")
 
-	result, err := server.repo.DeleteDocument(name)
+	result, err := server.repo.DeleteDocument(category, name)
 	if err != nil {
 		errorResponse(w, 500, fmt.Sprintf("delete error : %v", err))
 	} else {
@@ -224,9 +231,10 @@ func handlerDeleteDocument(w http.ResponseWriter, r *http.Request, p httprouter.
 }
 
 func handlerPostDocument(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	category := p.ByName("category_name")
 	name := p.ByName("document_name")
 
-	if server.repo.AddDocument(name) {
+	if server.repo.AddDocument(category, name) {
 		messageResponse(w, "document added")
 	} else {
 		errorResponse(w, 500, "error (maybe already exists ?)")
@@ -234,6 +242,7 @@ func handlerPostDocument(w http.ResponseWriter, r *http.Request, p httprouter.Pa
 }
 
 func handlerPostDocumentRename(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	category := p.ByName("category_name")
 	name := p.ByName("document_name")
 
 	out, err := ioutil.ReadAll(r.Body)
@@ -246,7 +255,7 @@ func handlerPostDocumentRename(w http.ResponseWriter, r *http.Request, p httprou
 		if err != nil {
 			errorResponse(w, 400, "error malformatted json")
 		} else {
-			if server.repo.RenameDocument(name, request.Name) {
+			if server.repo.RenameDocument(category, name, request.Name) {
 				messageResponse(w, "document renamed")
 			} else {
 				errorResponse(w, 500, "error")
@@ -257,6 +266,7 @@ func handlerPostDocumentRename(w http.ResponseWriter, r *http.Request, p httprou
 }
 
 func handlerPutDocumentMetadata(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	category := p.ByName("category_name")
 	name := p.ByName("document_name")
 
 	out, err := ioutil.ReadAll(r.Body)
@@ -269,7 +279,7 @@ func handlerPutDocumentMetadata(w http.ResponseWriter, r *http.Request, p httpro
 		if err != nil {
 			errorResponse(w, 400, "error malformatted json")
 		} else {
-			ok, err := server.repo.SetDocumentMetadata(name, metadata)
+			ok, err := server.repo.SetDocumentMetadata(category, name, metadata)
 			if err != nil || !ok {
 				errorResponse(w, 400, "error setting metadata")
 			} else {
@@ -281,13 +291,14 @@ func handlerPutDocumentMetadata(w http.ResponseWriter, r *http.Request, p httpro
 }
 
 func handlerPutDocumentContent(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	category := p.ByName("category_name")
 	name := p.ByName("document_name")
 
 	out, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		errorResponse(w, 400, "error in body")
 	} else {
-		ok, err := server.repo.SetDocumentContent(name, string(out))
+		ok, err := server.repo.SetDocumentContent(category, name, string(out))
 		if err != nil || !ok {
 			errorResponse(w, 400, fmt.Sprintf("error setting content : %v", err))
 		} else {
@@ -320,15 +331,15 @@ func makeHandle(handle func(http.ResponseWriter, *http.Request, httprouter.Param
 func (self *WebServer) Init(router *httprouter.Router) {
 	router.GET("/webui/*requested_resource", makeHandle(handlerWebUi, self))
 	router.GET("/api/status", makeHandle(handlerStatusRestAPI, self))
-	router.GET("/api/tags", makeHandle(handlerTagsRestAPI, self))
-	router.GET("/api/documents", makeHandle(handlerGetDocuments, self))
-	router.GET("/api/documents/:document_name/metadata", makeHandle(handlerGetDocumentMetadata, self))
-	router.GET("/api/documents/:document_name/content", makeHandle(handlerGetDocumentContent, self))
-	router.POST("/api/documents/:document_name", makeHandle(handlerPostDocument, self))
-	router.POST("/api/documents/:document_name/rename", makeHandle(handlerPostDocumentRename, self))
-	router.PUT("/api/documents/:document_name/metadata", makeHandle(handlerPutDocumentMetadata, self))
-	router.PUT("/api/documents/:document_name/content", makeHandle(handlerPutDocumentContent, self))
-	router.DELETE("/api/documents/:document_name", makeHandle(handlerDeleteDocument, self))
+	router.GET("/api/tags/:category_name", makeHandle(handlerTagsRestAPI, self))
+	router.GET("/api/documents/:category_name", makeHandle(handlerGetDocuments, self))
+	router.GET("/api/documents/:category_name/:document_name/metadata", makeHandle(handlerGetDocumentMetadata, self))
+	router.GET("/api/documents/:category_name/:document_name/content", makeHandle(handlerGetDocumentContent, self))
+	router.POST("/api/documents/:category_name/:document_name", makeHandle(handlerPostDocument, self))
+	router.POST("/api/documents/:category_name/:document_name/rename", makeHandle(handlerPostDocumentRename, self))
+	router.PUT("/api/documents/:category_name/:document_name/metadata", makeHandle(handlerPutDocumentMetadata, self))
+	router.PUT("/api/documents/:category_name/:document_name/content", makeHandle(handlerPutDocumentContent, self))
+	router.DELETE("/api/documents/:category_name/:document_name", makeHandle(handlerDeleteDocument, self))
 }
 
 /* Run runs the Web server... */

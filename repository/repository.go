@@ -34,8 +34,8 @@ func (repo *GitDocsRepository) GitRepositoryDir() *string {
 	return repo.gitRepositoryDir
 }
 
-func (repo *GitDocsRepository) GetDocuments() ([]string, interface{}) {
-	files, err := ioutil.ReadDir(repo.getDocumentsPath())
+func (repo *GitDocsRepository) GetDocuments(category string) ([]string, interface{}) {
+	files, err := ioutil.ReadDir(repo.getDocumentsPath(category))
 	if err != nil {
 		return nil, "cannot read dir"
 	}
@@ -111,8 +111,8 @@ func readFile(path string) ([]byte, interface{}) {
 	return content, nil
 }
 
-func (repo *GitDocsRepository) GetAllTags() ([]string, interface{}) {
-	documents, err := repo.GetDocuments()
+func (repo *GitDocsRepository) GetAllTags(category string) ([]string, interface{}) {
+	documents, err := repo.GetDocuments(category)
 	if err != nil {
 		return nil, "cannot get documents"
 	}
@@ -121,7 +121,7 @@ func (repo *GitDocsRepository) GetAllTags() ([]string, interface{}) {
 	var result = []string{}
 
 	for _, document := range documents {
-		metadata, err := repo.GetDocumentMetadata(document)
+		metadata, err := repo.GetDocumentMetadata(category, document)
 		if err != nil {
 			return result, "cannot load one metadata"
 		}
@@ -171,8 +171,8 @@ func documentMatchSearch(metadata *DocumentMetadata, q string) bool {
 	}
 }
 
-func (repo *GitDocsRepository) SearchDocuments(q string) ([]string, interface{}) {
-	documents, err := repo.GetDocuments()
+func (repo *GitDocsRepository) SearchDocuments(category string, q string) ([]string, interface{}) {
+	documents, err := repo.GetDocuments(category)
 	if err != nil {
 		return nil, "cannot get documents"
 	}
@@ -181,7 +181,7 @@ func (repo *GitDocsRepository) SearchDocuments(q string) ([]string, interface{})
 	var result = []string{}
 
 	for _, document := range documents {
-		metadata, err := repo.GetDocumentMetadata(document)
+		metadata, err := repo.GetDocumentMetadata(category, document)
 		if err != nil {
 			return result, "cannot load one metadata"
 		}
@@ -217,8 +217,8 @@ func contains(s []string, e string) bool {
 }
 
 func (repo *GitDocsRepository) ensureCategoryDirectoryReady(category string) bool {
-	if !tools.ExistsFile(repo.getDocumentsPath()) {
-		err := os.Mkdir(repo.getDocumentsPath(), 0755)
+	if !tools.ExistsFile(repo.getDocumentsPath(category)) {
+		err := os.Mkdir(repo.getDocumentsPath(category), 0755)
 		if err != nil {
 			fmt.Printf("error creating working dir %v\n!\n", err)
 			return false
@@ -248,24 +248,24 @@ func (repo *GitDocsRepository) AddCategory(name string) (bool, interface{}) {
 	return true, nil
 }
 
-func (repo *GitDocsRepository) getDocumentsPath() string {
-	return path.Join(repo.workingDir, "issues")
+func (repo *GitDocsRepository) getDocumentsPath(category string) string {
+	return path.Join(repo.workingDir, category)
 }
 
-func (repo *GitDocsRepository) getDocumentDirPath(name string) string {
-	return path.Join(repo.getDocumentsPath(), name)
+func (repo *GitDocsRepository) getDocumentDirPath(category string, name string) string {
+	return path.Join(repo.getDocumentsPath(category), name)
 }
 
-func (repo *GitDocsRepository) getDocumentMetadataFilePath(name string) string {
-	return path.Join(repo.getDocumentDirPath(name), "metadata.json")
+func (repo *GitDocsRepository) getDocumentMetadataFilePath(category string, name string) string {
+	return path.Join(repo.getDocumentDirPath(category, name), "metadata.json")
 }
 
-func (repo *GitDocsRepository) getDocumentContentFilePath(name string) string {
-	return path.Join(repo.getDocumentDirPath(name), "content.md")
+func (repo *GitDocsRepository) getDocumentContentFilePath(category string, name string) string {
+	return path.Join(repo.getDocumentDirPath(category, name), "content.md")
 }
 
-func (repo *GitDocsRepository) GetDocumentContent(name string) (*string, interface{}) {
-	filePath := repo.getDocumentContentFilePath(name)
+func (repo *GitDocsRepository) GetDocumentContent(category string, name string) (*string, interface{}) {
+	filePath := repo.getDocumentContentFilePath(category, name)
 	bytes, err := readFile(filePath)
 	if err != nil {
 		return nil, "no content"
@@ -276,7 +276,7 @@ func (repo *GitDocsRepository) GetDocumentContent(name string) (*string, interfa
 	return &content, nil
 }
 
-func (repo *GitDocsRepository) SetDocumentContent(name string, content string) (bool, interface{}) {
+func (repo *GitDocsRepository) SetDocumentContent(category string, name string, content string) (bool, interface{}) {
 	if strings.Contains(name, "/") {
 		return false, "invalid name"
 	}
@@ -287,7 +287,7 @@ func (repo *GitDocsRepository) SetDocumentContent(name string, content string) (
 		}
 	}
 
-	currentContent, err := repo.GetDocumentContent(name)
+	currentContent, err := repo.GetDocumentContent(category, name)
 	if err != nil {
 		return false, "cannot read document content"
 	}
@@ -296,7 +296,7 @@ func (repo *GitDocsRepository) SetDocumentContent(name string, content string) (
 		return true, nil
 	}
 
-	filePath := repo.getDocumentContentFilePath(name)
+	filePath := repo.getDocumentContentFilePath(category, name)
 	ok := writeFile(filePath, content)
 	if !ok {
 		return false, "error"
@@ -312,8 +312,8 @@ func (repo *GitDocsRepository) SetDocumentContent(name string, content string) (
 	return true, nil
 }
 
-func (repo *GitDocsRepository) GetDocumentMetadata(name string) (*DocumentMetadata, interface{}) {
-	filePath := repo.getDocumentMetadataFilePath(name)
+func (repo *GitDocsRepository) GetDocumentMetadata(category string, name string) (*DocumentMetadata, interface{}) {
+	filePath := repo.getDocumentMetadataFilePath(category, name)
 	bytes, err := readFile(filePath)
 	if err != nil {
 		return nil, "no content"
@@ -329,7 +329,7 @@ func (repo *GitDocsRepository) GetDocumentMetadata(name string) (*DocumentMetada
 	return result, nil
 }
 
-func (repo *GitDocsRepository) SetDocumentMetadata(name string, metadata *DocumentMetadata) (bool, interface{}) {
+func (repo *GitDocsRepository) SetDocumentMetadata(category string, name string, metadata *DocumentMetadata) (bool, interface{}) {
 	if strings.Contains(name, "/") {
 		return false, "invalid name"
 	}
@@ -345,7 +345,7 @@ func (repo *GitDocsRepository) SetDocumentMetadata(name string, metadata *Docume
 		return false, "json error"
 	}
 
-	filePath := repo.getDocumentMetadataFilePath(name)
+	filePath := repo.getDocumentMetadataFilePath(category, name)
 	ok := writeFile(filePath, string(bytes))
 	if !ok {
 		return false, "write file error"
@@ -486,7 +486,7 @@ func (repo *GitDocsRepository) GetStatus() (*string, interface{}) {
 	return &res, nil
 }
 
-func (repo *GitDocsRepository) RenameDocument(name string, newName string) bool {
+func (repo *GitDocsRepository) RenameDocument(category string, name string, newName string) bool {
 	if strings.Contains(name, "/") {
 		return false
 	}
@@ -497,12 +497,12 @@ func (repo *GitDocsRepository) RenameDocument(name string, newName string) bool 
 		}
 	}
 
-	documentDir := repo.getDocumentDirPath(name)
+	documentDir := repo.getDocumentDirPath(category, name)
 	if !tools.ExistsFile(documentDir) {
 		return false
 	}
 
-	newDocumentDir := repo.getDocumentDirPath(newName)
+	newDocumentDir := repo.getDocumentDirPath(category, newName)
 	if tools.ExistsFile(newDocumentDir) {
 		return false
 	}
@@ -522,7 +522,7 @@ func (repo *GitDocsRepository) RenameDocument(name string, newName string) bool 
 	return true
 }
 
-func (repo *GitDocsRepository) AddDocument(name string) bool {
+func (repo *GitDocsRepository) AddDocument(category string, name string) bool {
 	if strings.Contains(name, "/") {
 		return false
 	}
@@ -533,14 +533,14 @@ func (repo *GitDocsRepository) AddDocument(name string) bool {
 		}
 	}
 
-	documentDir := repo.getDocumentDirPath(name)
+	documentDir := repo.getDocumentDirPath(category, name)
 	if tools.ExistsFile(documentDir) {
 		return false
 	}
 
 	os.Mkdir(documentDir, 0755)
 
-	ok := writeFileJson(repo.getDocumentMetadataFilePath(name), DocumentMetadata{Tags: []string{}})
+	ok := writeFileJson(repo.getDocumentMetadataFilePath(category, name), DocumentMetadata{Tags: []string{}})
 	if !ok {
 		return false
 	}
@@ -550,7 +550,7 @@ func (repo *GitDocsRepository) AddDocument(name string) bool {
 		return false
 	}
 
-	ok = writeFile(repo.getDocumentContentFilePath(name), string(documentContentModelBytes))
+	ok = writeFile(repo.getDocumentContentFilePath(category, name), string(documentContentModelBytes))
 	if !ok {
 		return false
 	}
@@ -565,7 +565,7 @@ func (repo *GitDocsRepository) AddDocument(name string) bool {
 	return true
 }
 
-func (repo *GitDocsRepository) DeleteDocument(name string) (bool, interface{}) {
+func (repo *GitDocsRepository) DeleteDocument(category string, name string) (bool, interface{}) {
 	if strings.Contains(name, "/") {
 		return false, "'/' is forbidden in names"
 	}
@@ -576,7 +576,7 @@ func (repo *GitDocsRepository) DeleteDocument(name string) (bool, interface{}) {
 		}
 	}
 
-	documentDir := repo.getDocumentDirPath(name)
+	documentDir := repo.getDocumentDirPath(category, name)
 	if !tools.ExistsFile(documentDir) {
 		return false, "document does not exists"
 	}
