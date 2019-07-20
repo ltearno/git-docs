@@ -231,6 +231,15 @@ func (magic *MagicGitRepository) SetIssueContent(name string, content string) (b
 		return false, "repository is dirty"
 	}
 
+	currentContent, err := magic.GetIssueContent(name)
+	if err != nil {
+		return false, "cannot read issue content"
+	}
+
+	if *(currentContent) == content {
+		return true, nil
+	}
+
 	filePath := magic.getIssueContentFilePath(name)
 	ok := writeFile(filePath, content)
 	if !ok {

@@ -75,7 +75,6 @@
                                 placeholder="list columns sub-search, comma separated" /></label>
                     </div>
                 </div>
-                <div class="mui-divider"></div>
                 <div id='board-issues-ul'></div>
                 <div class="mui-divider"></div>
                 <form id='new-issue-form'>
@@ -229,7 +228,7 @@
 
             let validateButton = issueElement.getElementsByClassName('validate-edit').item(0)
             validateButton.addEventListener('click', () => {
-                let waitCount = 2
+                let waitCount = 1
                 const maybeReload = name => {
                     waitCount--
                     if (!waitCount)
@@ -237,16 +236,19 @@
                 }
 
                 const newName = issueElement.querySelector('#name-input').value
-                if (newName != name)
+                if (newName != name) {
+                    waitCount++
                     postData(`/api/issues/${name}/rename`, { name: newName })
                         .then(_ => {
                             log(`renamed issue ${name}`)
                             maybeReload(newName)
                         })
                         .catch(err => log(`rename ${name} failed`))
+                }
 
                 const newContent = issueElement.getElementsByClassName('issue-content-textarea').item(0).value
                 if (newContent) {
+                    waitCount++
                     putData(`/api/issues/${name}/content`, newContent)
                         .then(_ => {
                             log(`updated issue ${name} content`)
@@ -257,6 +259,8 @@
                 else {
                     log(`no change to content`)
                 }
+
+                maybeReload()
             })
         }
 

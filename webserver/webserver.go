@@ -289,9 +289,9 @@ func handlerPutIssueContent(w http.ResponseWriter, r *http.Request, p httprouter
 	} else {
 		ok, err := server.magic.SetIssueContent(name, string(out))
 		if err != nil || !ok {
-			errorResponse(w, 400, "error setting content")
+			errorResponse(w, 400, fmt.Sprintf("error setting content : %v", err))
 		} else {
-			messageResponse(w, "issue metadata updated")
+			messageResponse(w, "issue content updated")
 		}
 	}
 }
