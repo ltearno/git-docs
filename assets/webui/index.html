@@ -375,24 +375,24 @@
 
                 let q = search ? (column ? `& ${search} ${column}` : search) : column
 
-                let columnElement = document.createElement('div')
-                columnElement.classList.add('mui-panel')
+                let columnElement = elFromHtml(`<div><div style='text-align: center;font-weight: bold;padding-bottom: .5em;'>${q || 'All'}</div></div>`)
                 if (issueIndex > 0)
                     columnElement.style.marginLeft = '1em'
                 columnsElement.appendChild(columnElement)
 
-                let prep = `<div style='text-align: center;font-weight: bold;padding-bottom: .5em;'>${q || 'All'}</div>`
-
                 fetch(q ? `/api/issues/?q=${encodeURIComponent(q)}` : "/api/issues")
                     .then(response => response.json())
                     .then(issues => {
-                        prep += issues.map(name => `<div>- <span onclick='showIssue("${name}")'>${name}</span>&nbsp;<span x-id='tags'></span>&nbsp;&nbsp;&nbsp;<button onclick='deleteIssue("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
-                        columnElement.innerHTML = prep
+                        let prep = issues.map(name => `<div>- <span onclick='showIssue("${name}")'>${name}</span>&nbsp;<span x-id='tags'></span>&nbsp;&nbsp;&nbsp;<button onclick='deleteIssue("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
+
+                        let columnIssuesElement = elFromHtml(`<div class='mui-panel'>${prep}</div>`)
 
                         let issueToFetchTags = 0
                         const maybeLoad = () => {
-                            if (issueToFetchTags >= issues.length)
+                            if (issueToFetchTags >= issues.length) {
+                                columnElement.appendChild(columnIssuesElement)
                                 return
+                            }
 
                             let loadedIssueTags = issueToFetchTags++
                             let name = issues[loadedIssueTags]
@@ -401,7 +401,7 @@
                                 .then(response => response.json())
                                 .then(metadata => {
                                     if (metadata && metadata.tags)
-                                        columnElement.children.item(loadedIssueTags + 1).querySelector('[x-id=tags]').innerHTML = metadata.tags.map(tagToHtmlBadge).join('')
+                                        columnIssuesElement.children.item(loadedIssueTags).querySelector('[x-id=tags]').innerHTML = metadata.tags.map(tagToHtmlBadge).join('')
                                     maybeLoad()
                                 })
                                 .catch(err => {
@@ -416,6 +416,10 @@
                     .catch(err => log(`loadIssues failed`))
             }
 
+            loadTags()
+        }
+
+        function loadTags() {
             fetch("/api/tags")
                 .then(response => response.json())
                 .then(tags => {
