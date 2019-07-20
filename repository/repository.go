@@ -24,6 +24,7 @@ type IssueMetadata struct {
 }
 
 func NewMagicGitRepository(gitRepositoryDir *string) *MagicGitRepository {
+	// TODO should provide workingDir and git repository in the function parameter
 	return &MagicGitRepository{
 		gitRepositoryDir,
 		path.Join(*gitRepositoryDir, ".magic-git"),
@@ -227,8 +228,10 @@ func (magic *MagicGitRepository) SetIssueContent(name string, content string) (b
 		return false, "invalid name"
 	}
 
-	if !isGitRepositoryClean(magic.gitRepositoryDir) {
-		return false, "repository is dirty"
+	if magic.gitRepositoryDir != nil {
+		if !isGitRepositoryClean(magic.gitRepositoryDir) {
+			return false, "repository is dirty"
+		}
 	}
 
 	currentContent, err := magic.GetIssueContent(name)
@@ -246,9 +249,11 @@ func (magic *MagicGitRepository) SetIssueContent(name string, content string) (b
 		return false, "error"
 	}
 
-	ok = commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - updated issue content %s", name), magic.workingDir)
-	if !ok {
-		return false, "commit error"
+	if magic.gitRepositoryDir != nil {
+		ok = commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - updated issue content %s", name), magic.workingDir)
+		if !ok {
+			return false, "commit error"
+		}
 	}
 
 	return true, nil
@@ -276,8 +281,10 @@ func (magic *MagicGitRepository) SetIssueMetadata(name string, metadata *IssueMe
 		return false, "invalid name"
 	}
 
-	if !isGitRepositoryClean(magic.gitRepositoryDir) {
-		return false, "repository is dirty"
+	if magic.gitRepositoryDir != nil {
+		if !isGitRepositoryClean(magic.gitRepositoryDir) {
+			return false, "repository is dirty"
+		}
 	}
 
 	bytes, err := json.Marshal(*metadata)
@@ -291,9 +298,11 @@ func (magic *MagicGitRepository) SetIssueMetadata(name string, metadata *IssueMe
 		return false, "write file error"
 	}
 
-	ok = commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - updated issue metadata %s", name), magic.workingDir)
-	if !ok {
-		return false, "commit error"
+	if magic.gitRepositoryDir != nil {
+		ok = commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - updated issue metadata %s", name), magic.workingDir)
+		if !ok {
+			return false, "commit error"
+		}
 	}
 
 	return true, nil
@@ -390,16 +399,25 @@ func commitChanges(gitRepositoryDir *string, message string, committedDir string
 }
 
 func (magic *MagicGitRepository) IsClean() (bool, interface{}) {
-	return isGitRepositoryClean(magic.gitRepositoryDir), nil
+	if magic.gitRepositoryDir != nil {
+		return isGitRepositoryClean(magic.gitRepositoryDir), nil
+	} else {
+		return true, nil
+	}
 }
 
 func (magic *MagicGitRepository) GetStatus() (*string, interface{}) {
-	output, err := execCommand(*magic.gitRepositoryDir, "git", "status")
-	if err != nil {
-		return nil, err
+	if magic.gitRepositoryDir != nil {
+		output, err := execCommand(*magic.gitRepositoryDir, "git", "status")
+		if err != nil {
+			return nil, err
+		}
+
+		return output, nil
 	}
 
-	return output, nil
+	res := "git repository not set"
+	return &res, nil
 }
 
 func (magic *MagicGitRepository) RenameIssue(name string, newName string) bool {
@@ -407,8 +425,10 @@ func (magic *MagicGitRepository) RenameIssue(name string, newName string) bool {
 		return false
 	}
 
-	if !isGitRepositoryClean(magic.gitRepositoryDir) {
-		return false
+	if magic.gitRepositoryDir != nil {
+		if !isGitRepositoryClean(magic.gitRepositoryDir) {
+			return false
+		}
 	}
 
 	issueDir := magic.getIssueDirPath(name)
@@ -426,9 +446,11 @@ func (magic *MagicGitRepository) RenameIssue(name string, newName string) bool {
 		return false
 	}
 
-	ok := commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - renamed issue %s to %s", name, newIssueDir), magic.workingDir)
-	if !ok {
-		return false
+	if magic.gitRepositoryDir != nil {
+		ok := commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - renamed issue %s to %s", name, newIssueDir), magic.workingDir)
+		if !ok {
+			return false
+		}
 	}
 
 	return true
@@ -439,8 +461,10 @@ func (magic *MagicGitRepository) AddIssue(name string) bool {
 		return false
 	}
 
-	if !isGitRepositoryClean(magic.gitRepositoryDir) {
-		return false
+	if magic.gitRepositoryDir != nil {
+		if !isGitRepositoryClean(magic.gitRepositoryDir) {
+			return false
+		}
 	}
 
 	issueDir := magic.getIssueDirPath(name)
@@ -465,9 +489,11 @@ func (magic *MagicGitRepository) AddIssue(name string) bool {
 		return false
 	}
 
-	ok = commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - added issue %s", name), magic.workingDir)
-	if !ok {
-		return false
+	if magic.gitRepositoryDir != nil {
+		ok = commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - added issue %s", name), magic.workingDir)
+		if !ok {
+			return false
+		}
 	}
 
 	return true
@@ -478,8 +504,10 @@ func (magic *MagicGitRepository) DeleteIssue(name string) (bool, interface{}) {
 		return false, "'/' is forbidden in names"
 	}
 
-	if !isGitRepositoryClean(magic.gitRepositoryDir) {
-		return false, "git repository is dirty"
+	if magic.gitRepositoryDir != nil {
+		if !isGitRepositoryClean(magic.gitRepositoryDir) {
+			return false, "git repository is dirty"
+		}
 	}
 
 	issueDir := magic.getIssueDirPath(name)
@@ -489,9 +517,11 @@ func (magic *MagicGitRepository) DeleteIssue(name string) (bool, interface{}) {
 
 	os.RemoveAll(issueDir)
 
-	ok := commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - deleted issue %s", name), magic.workingDir)
-	if !ok {
-		return false, false
+	if magic.gitRepositoryDir != nil {
+		ok := commitChanges(magic.gitRepositoryDir, fmt.Sprintf("issues() - deleted issue %s", name), magic.workingDir)
+		if !ok {
+			return false, false
+		}
 	}
 
 	return true, nil
