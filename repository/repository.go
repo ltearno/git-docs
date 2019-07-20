@@ -138,6 +138,39 @@ func (magic *MagicGitRepository) GetAllTags() ([]string, interface{}) {
 	return result, nil
 }
 
+func issueTagsContainText(metadata *IssueMetadata, q string) bool {
+	for _, tag := range metadata.Tags {
+		if strings.Contains(strings.ToLower(tag), q) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func issueMatchSearch(metadata *IssueMetadata, q string) bool {
+	q = strings.TrimSpace(q)
+	if q == "" {
+		return true
+	} else if strings.HasPrefix(q, "&") {
+		q = strings.TrimSpace(q[1:])
+		separatorPos := strings.Index(q, " ")
+		if separatorPos == 0 {
+			return false
+		}
+		return issueMatchSearch(metadata, q[:separatorPos]) && issueMatchSearch(metadata, q[separatorPos+1:])
+	} else if strings.HasPrefix(q, "|") {
+		q = strings.TrimSpace(q[1:])
+		separatorPos := strings.Index(q, " ")
+		if separatorPos == 0 {
+			return false
+		}
+		return issueMatchSearch(metadata, q[:separatorPos]) || issueMatchSearch(metadata, q[separatorPos+1:])
+	} else {
+		return issueTagsContainText(metadata, q)
+	}
+}
+
 func (magic *MagicGitRepository) SearchIssues(q string) ([]string, interface{}) {
 	issues, err := magic.GetIssues()
 	if err != nil {
@@ -153,11 +186,8 @@ func (magic *MagicGitRepository) SearchIssues(q string) ([]string, interface{}) 
 			return result, "cannot load one metadata"
 		}
 
-		for _, tag := range metadata.Tags {
-			if strings.Contains(strings.ToLower(tag), q) {
-				result = append(result, issue)
-				break
-			}
+		if issueMatchSearch(metadata, q) {
+			result = append(result, issue)
 		}
 	}
 
