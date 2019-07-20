@@ -11,6 +11,7 @@ C'est un problèmem de fond !
 - [ ] Uranus
 - [ ] Neptune
 - [ ] Comet Haley
+- [x] Documenter ce processus (pour rappel _{{.Issue.Name}}_)
 
 > This is a quoted phrase that
 > You know
