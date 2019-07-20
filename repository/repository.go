@@ -35,7 +35,7 @@ func (magic *MagicGitRepository) GitRepositoryDir() *string {
 }
 
 func (magic *MagicGitRepository) GetIssues() ([]string, interface{}) {
-	files, err := ioutil.ReadDir(path.Join(magic.workingDir, "issues"))
+	files, err := ioutil.ReadDir(magic.getIssuesPath())
 	if err != nil {
 		return nil, "cannot read dir"
 	}
@@ -541,15 +541,14 @@ func (magic *MagicGitRepository) DeleteIssue(name string) (bool, interface{}) {
 
 func (magic *MagicGitRepository) EnsureWorkingSpaceReady() bool {
 	if !tools.ExistsFile(magic.workingDir) {
-		var err = os.Mkdir(magic.workingDir, 0755)
+		err := os.Mkdir(magic.workingDir, 0755)
 		if err != nil {
 			return false
 		}
+	}
 
-		// since we don't need a tmp directory right now, the line below is commented out
-		// writeFile(path.Join(magic.workingDir, ".gitignore"), "tmp")
-
-		err = os.Mkdir(path.Join(magic.workingDir, "issues"), 0755)
+	if !tools.ExistsFile(magic.workingDir) {
+		err := os.Mkdir(magic.getIssuesPath(), 0755)
 		if err != nil {
 			fmt.Printf("ERROR %v\n!\n", err)
 			return false
