@@ -168,6 +168,7 @@ function appStateSetDocument(document, modeEditDocument, dbChanged = false) {
 
 function appStateAfterChange() {
     loadStatus()
+    loadCategories(appState.category)
     loadTags()
     loadDocuments(appState.category, appState.search, appState.split)
     drawDocumentDetail()
@@ -315,10 +316,10 @@ function drawDocumentEdition(category, name) {
 }
 
 function drawDocument(category, name) {
-    el('board-opened-documents').innerHTML = ''
-
-    if (!name)
+    if (!name) {
+        el('board-opened-documents').innerHTML = ``
         return
+    }
 
     const documentElement = document.createElement('div')
     documentElement.classList.add('mui-panel')
@@ -341,8 +342,27 @@ function drawDocument(category, name) {
         addTagToDocument(category, name, tag)
     })
 
-    el('board-opened-documents').appendChild(documentElement)
+    const asyncCount = runAtLast => {
+        let waited = 0
+        return {
+            add: function () {
+                waited++
+            },
+            remove: function () {
+                waited--
+                if (waited == 0)
+                    runAtLast()
+            }
+        }
+    }
 
+    const count = asyncCount(() => {
+        el('board-opened-documents').innerHTML = ''
+        el('board-opened-documents').appendChild(documentElement)
+    })
+
+    count.add()
+    count.add()
     getData(`/api/documents/${category}/${name}/metadata`)
         .then(metadata => {
             if (metadata && metadata.tags) {
@@ -351,13 +371,18 @@ function drawDocument(category, name) {
             else {
                 metadataElement.innerHTML += `<pre>${JSON.stringify(metadata, null, 2)}</pre>`
             }
+
+            count.remove()
         })
 
+    count.add()
     getData(`/api/documents/${category}/${name}/content?interpolated=true`, 'application/markdown')
         .then(content => {
             contentElement.innerHTML += marked(content)
+
+            count.remove()
         })
-        .catch(err => log(`get content for ${name} failed`))
+    count.remove()
 }
 
 function loadDocuments(category, search, split) {
@@ -392,7 +417,7 @@ function loadDocuments(category, search, split) {
 
         getData(q ? `/api/documents/${category}/?q=${encodeURIComponent(q)}` : `/api/documents/${category}`)
             .then(documents => {
-                let prep = documents.map(name => `<div><span onclick='appStateSetDocument("${name}", false, false)'>${name}</span>&nbsp;<span x-id='tags'></span>&nbsp;&nbsp;&nbsp;<button onclick='deleteDocument("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
+                let prep = documents.map(name => `<div><span style='cursor: pointer;' onclick='appStateSetDocument("${name}", false, false)'>${name}</span>&nbsp;<span x-id='tags'></span>&nbsp;&nbsp;&nbsp;<button onclick='deleteDocument("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
 
                 let columnDocumentsElement = elFromHtml(`<div class='mui-panel'>${prep}</div>`)
 
@@ -437,12 +462,27 @@ function loadTags() {
 function loadStatus() {
     getData("/api/status")
         .then(status => {
+            if (!status) {
+                log(`loadStatus failed`)
+                return
+            }
+
             el('board-status').innerHTML = `repository: ${status.gitRepository}<br/>`
             el('board-status').innerHTML += `<span style='color:${status.clean ? 'green' : 'red'};'>${status.clean ? 'ready for operations !' : 'working directory files not synced, commit your changes please'}</span>`
             if (!status.clean)
                 el('board-status').innerHTML += `<pre>${status.text}</pre>`
         })
-        .catch(err => log(`loadStatus failed`))
+}
+
+function loadCategories(currentCategory) {
+    fetchCategories().then(categories => {
+        if (!categories) {
+            el('board-categories').innerHTML = `fetch categories failed`
+            return
+        }
+
+        el('board-categories').innerHTML = `Categories : ` + categories.map(category => `<div class='badge ${category == currentCategory ? 'badge-color-0' : ''}'>${category}</div>`).join('')
+    })
 }
 
 function installUi() {
@@ -459,15 +499,8 @@ function installUi() {
 
         let search = el('search-document').value || ''
         let split = el('columns-document').value || ''
-
-        if (search)
-            localStorage.setItem('search-document', search)
-        else
-            localStorage.removeItem('search-document')
-        if (split)
-            localStorage.setItem('columns-document', split)
-        else
-            localStorage.removeItem('columns-document')
+        localStorage.setItem('search-document', search)
+        localStorage.setItem('columns-document', split)
 
         appStateSetBoardSearch(search, split)
     }
