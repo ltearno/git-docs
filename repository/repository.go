@@ -19,8 +19,14 @@ type GitDocsRepository struct {
 	workingDir       string
 }
 
-type DocumentMetadata struct {
-	Tags []string `json:"tags"`
+type DocumentMetadata map[string]interface{}
+
+func (metadata *DocumentMetadata) GetTags() []string {
+	result := []string{}
+	for _, tag := range (*metadata)["tags"].([]interface{}) {
+		result = append(result, tag.(string))
+	}
+	return result
 }
 
 func NewGitDocsRepository(gitRepositoryDir *string, workingDir string) *GitDocsRepository {
@@ -129,7 +135,7 @@ func (repo *GitDocsRepository) GetAllTags(category string) ([]string, interface{
 			return result, "cannot load one metadata"
 		}
 
-		for _, tag := range metadata.Tags {
+		for _, tag := range metadata.GetTags() {
 			_, alreadyRegistered := tagSet[tag]
 			if !alreadyRegistered {
 				tagSet[tag] = true
@@ -142,7 +148,7 @@ func (repo *GitDocsRepository) GetAllTags(category string) ([]string, interface{
 }
 
 func documentTagsContainText(metadata *DocumentMetadata, q string) bool {
-	for _, tag := range metadata.Tags {
+	for _, tag := range metadata.GetTags() {
 		if strings.Contains(strings.ToLower(tag), q) {
 			return true
 		}
