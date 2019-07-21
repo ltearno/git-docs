@@ -184,10 +184,73 @@ function drawDocumentDetail() {
 
 
 
-function clear() {
-    el('board-documents-ul').innerHTML = ''
-    el('board-opened-documents').innerHTML = ''
+
+
+function fetchCategories() {
+    return getData(`/api/categories`)
 }
+
+function deleteDocument(name) {
+    deleteData(`/api/documents/issues/${name}`)
+        .then(_ => {
+            log(`deleted document ${name}`)
+            appStateSetDocument(null, false, true)
+        })
+        .catch(err => log(`deleteDocument ${name} failed`))
+}
+
+function addDocument(name) {
+    postData(`/api/documents/issues/${name}`, {})
+        .then(_ => {
+            log(`add document ${name}`)
+            appStateSetDocument(name, false, true)
+        })
+        .catch(err => log(`addDocument ${name} failed`))
+}
+
+function addTagToDocument(category, name, tagToAdd) {
+    getData(`/api/documents/${category}/${name}/metadata`)
+        .then(metadata => {
+            let update = false
+
+            if (!metadata) {
+                metadata = {}
+                update = true
+            }
+
+            if (!metadata.tags) {
+                metadata.tags = []
+                update = true
+            }
+
+            if (!metadata.tags.includes(tagToAdd)) {
+                metadata.tags.push(tagToAdd)
+                update = true
+            }
+
+            if (update) {
+                putData(`/api/documents/${category}/${name}/metadata`, metadata)
+                    .then(_ => {
+                        log(`update document metadata ${name}`)
+                        appStateSetDocument(name, false, true)
+                    })
+                    .catch(err => log(`updateDocument metadata ${name} failed`))
+            }
+            else {
+                log(`tag already present`)
+            }
+        })
+        .catch(err => log(`get metadata for ${name} failed`))
+}
+
+
+
+
+
+
+
+
+
 
 function drawDocumentEdition(category, name) {
     el('board-opened-documents').innerHTML = ''
@@ -296,45 +359,6 @@ function drawDocument(category, name) {
         .catch(err => log(`get content for ${name} failed`))
 }
 
-function fetchCategories() {
-    return getData(`/api/categories`)
-}
-
-function addTagToDocument(category, name, tagToAdd) {
-    getData(`/api/documents/${category}/${name}/metadata`)
-        .then(metadata => {
-            let update = false
-
-            if (!metadata) {
-                metadata = {}
-                update = true
-            }
-
-            if (!metadata.tags) {
-                metadata.tags = []
-                update = true
-            }
-
-            if (!metadata.tags.includes(tagToAdd)) {
-                metadata.tags.push(tagToAdd)
-                update = true
-            }
-
-            if (update) {
-                putData(`/api/documents/${category}/${name}/metadata`, metadata)
-                    .then(_ => {
-                        log(`update document metadata ${name}`)
-                        appStateSetDocument(name, false, true)
-                    })
-                    .catch(err => log(`updateDocument metadata ${name} failed`))
-            }
-            else {
-                log(`tag already present`)
-            }
-        })
-        .catch(err => log(`get metadata for ${name} failed`))
-}
-
 function loadDocuments(category, search, split) {
     let columns = split.split(",").map(v => v.trim())
 
@@ -409,24 +433,6 @@ function loadStatus() {
                 el('board-status').innerHTML += `<pre>${status.text}</pre>`
         })
         .catch(err => log(`loadStatus failed`))
-}
-
-function deleteDocument(name) {
-    deleteData(`/api/documents/issues/${name}`)
-        .then(_ => {
-            log(`deleted document ${name}`)
-            appStateSetDocument(null, false, true)
-        })
-        .catch(err => log(`deleteDocument ${name} failed`))
-}
-
-function addDocument(name) {
-    postData(`/api/documents/issues/${name}`, {})
-        .then(_ => {
-            log(`add document ${name}`)
-            appStateSetDocument(name, false, true)
-        })
-        .catch(err => log(`addDocument ${name} failed`))
 }
 
 function installUi() {
