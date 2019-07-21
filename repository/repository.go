@@ -229,7 +229,11 @@ func (repo *GitDocsRepository) ensureDirectoryReady(path string) bool {
 }
 
 func (repo *GitDocsRepository) ensureCategoryDirectoryReady(category string) bool {
-	return repo.ensureDirectoryReady(repo.getDocumentsPath(category))
+	return repo.ensureDirectoryReady(repo.getCategoryPath(category))
+}
+
+func (repo *GitDocsRepository) ensureCategoryDocumentsDirectoryReady(category string) bool {
+	return repo.ensureCategoryDirectoryReady(category) && repo.ensureDirectoryReady(repo.getDocumentsPath(category))
 }
 
 func (repo *GitDocsRepository) AddCategory(name string) (bool, interface{}) {
@@ -252,8 +256,16 @@ func (repo *GitDocsRepository) AddCategory(name string) (bool, interface{}) {
 	return true, nil
 }
 
-func (repo *GitDocsRepository) getDocumentsPath(category string) string {
+func (repo *GitDocsRepository) getCategoryPath(category string) string {
 	return path.Join(repo.workingDir, category)
+}
+
+func (repo *GitDocsRepository) getConfigurationPath(category string) string {
+	return path.Join(repo.getCategoryPath(category), "conf")
+}
+
+func (repo *GitDocsRepository) getDocumentsPath(category string) string {
+	return path.Join(repo.getCategoryPath(category), "docs")
 }
 
 func (repo *GitDocsRepository) getDocumentDirPath(category string, name string) string {
