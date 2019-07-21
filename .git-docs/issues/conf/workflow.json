@@ -1,12 +1,21 @@
 {
     "when-removed-todo": {
-        "condition": "!tobechecked",
+        "condition": "| todo done",
         "addTags": [
-            "tocheck",
-            "done"
+            "done",
+            "to-inspect"
         ],
         "removeTags": [
-            "todo"
+            "todo",
+            "a faire"
+        ]
+    },
+    "when-added-doc": {
+        "condition": "",
+        "addTags": [
+            "to-be-redacted",
+            "hello",
+            "goodbye"
         ]
     }
 }
