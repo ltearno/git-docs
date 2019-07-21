@@ -192,3 +192,7 @@ html, body, input, textarea, button {
     flex-flow: row nowrap;
     margin-top: 1em;
 }
+
+[onclick] {
+    cursor: pointer;
+}

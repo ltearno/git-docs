@@ -250,6 +250,22 @@ function addTagToDocument(category, name, tagToAdd) {
         .catch(err => log(`get metadata for ${name} failed`))
 }
 
+function deleteTagToDocument(category, name, tagToRemove) {
+    getData(`/api/documents/${category}/${name}/metadata`)
+        .then(metadata => {
+            if (!metadata || !metadata.tags || !metadata.tags.includes(tagToRemove))
+                return
+
+            metadata.tags = metadata.tags.filter(tag => tag != tagToRemove)
+
+            putData(`/api/documents/${category}/${name}/metadata`, metadata)
+                .then(_ => {
+                    log(`update document metadata ${name}`)
+                    appStateSetDocument(name, false, true)
+                })
+        })
+}
+
 
 
 
@@ -373,7 +389,7 @@ function drawDocument(category, name) {
     getData(`/api/documents/${category}/${name}/metadata`)
         .then(metadata => {
             if (metadata && metadata.tags) {
-                metadataElement.innerHTML += metadata.tags.map(tagToHtmlBadge).join('')
+                metadataElement.innerHTML += metadata.tags.map(tag => `<div class="badge ${badgeColorClass(tag)}" >${tag}&nbsp;<span onclick='deleteTagToDocument("${category}","${name}","${tag}")'>[X]</span></div>`).join('')
             }
             else {
                 metadataElement.innerHTML += `<pre>${JSON.stringify(metadata, null, 2)}</pre>`
@@ -506,7 +522,7 @@ function installUi() {
 
         let search = el('search-document').value || ''
         let split = el('columns-document').value || ''
-        
+
         appStateSetBoardSearch(search, split)
     }
     let timer = 0
