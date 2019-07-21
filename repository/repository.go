@@ -74,12 +74,10 @@ func writeFile(path string, content string) bool {
 
 	defer file.Close()
 
-	written, err := file.Write([]byte(content))
+	_, err = file.Write([]byte(content))
 	if err != nil {
 		return false
 	}
-
-	fmt.Printf("written %d bytes to %s\n", written, path)
 
 	return true
 }
@@ -147,14 +145,18 @@ func (repo *GitDocsRepository) GetAllTags(category string) ([]string, interface{
 	return result, nil
 }
 
-func documentTagsContainText(metadata *DocumentMetadata, q string) bool {
-	for _, tag := range metadata.GetTags() {
+func tagsContainText(tags []string, q string) bool {
+	for _, tag := range tags {
 		if strings.Contains(strings.ToLower(tag), q) {
 			return true
 		}
 	}
 
 	return false
+}
+
+func documentTagsContainText(metadata *DocumentMetadata, q string) bool {
+	return tagsContainText(metadata.GetTags(), q)
 }
 
 func documentMatchSearch(metadata *DocumentMetadata, q string) bool {
