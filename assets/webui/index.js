@@ -387,7 +387,7 @@ function loadDocuments(category, search, split) {
 
         let q = search ? (column ? `& ${search} ${column}` : search) : column
 
-        let columnElement = elFromHtml(`<div><div style='text-align: center;font-weight: bold;padding-bottom: .5em;${documentIndex > 0 ? 'margin-left:1em;' : ''}'>${q || 'All'}</div></div>`)
+        let columnElement = elFromHtml(`<div style='${documentIndex > 0 ? 'margin-left:1em;' : ''}'><div style='text-align: center;font-weight: bold;padding-bottom: .5em'>${q || 'All'}</div></div>`)
         columnsElement.appendChild(columnElement)
 
         getData(q ? `/api/documents/${category}/?q=${encodeURIComponent(q)}` : `/api/documents/${category}`)
@@ -449,29 +449,40 @@ function installUi() {
     appState.search = el('search-document').value = localStorage.getItem('search-document') || ''
     appState.split = el('columns-document').value = localStorage.getItem('columns-document') || ''
 
-    let loadDocumentsTriggered = false
+    let lastTimeTriggered = 0
+    const runLoadDocuments = () => {
+        lastTimeTriggered = Date.now()
+        if (timer) {
+            clearTimeout(timer)
+            timer = 0
+        }
+
+        let search = el('search-document').value || ''
+        let split = el('columns-document').value || ''
+
+        if (search)
+            localStorage.setItem('search-document', search)
+        else
+            localStorage.removeItem('search-document')
+        if (split)
+            localStorage.setItem('columns-document', split)
+        else
+            localStorage.removeItem('columns-document')
+
+        appStateSetBoardSearch(search, split)
+    }
+    let timer = 0
+    const DELAY = 50
     const maybeLoadDocuments = () => {
-        if (loadDocumentsTriggered)
+        const now = Date.now()
+
+        if (lastTimeTriggered + DELAY > now) {
+            if (!timer)
+                timer = setTimeout(runLoadDocuments, lastTimeTriggered + DELAY - now)
             return
+        }
 
-        loadDocumentsTriggered = true
-        setTimeout(() => {
-            loadDocumentsTriggered = false
-
-            let search = el('search-document').value || ''
-            let split = el('columns-document').value || ''
-
-            if (search)
-                localStorage.setItem('search-document', search)
-            else
-                localStorage.removeItem('search-document')
-            if (split)
-                localStorage.setItem('columns-document', split)
-            else
-                localStorage.removeItem('columns-document')
-
-            appStateSetBoardSearch(search, split)
-        }, 50)
+        runLoadDocuments()
     }
     el('search-document').addEventListener('input', event => {
         maybeLoadDocuments()
