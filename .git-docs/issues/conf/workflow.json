@@ -1,5 +1,6 @@
 {
     "when-removed-todo": {
+        "condition": "!tobechecked",
         "addTags": [
             "tocheck",
             "done"
