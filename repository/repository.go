@@ -155,11 +155,7 @@ func tagsContainText(tags []string, q string) bool {
 	return false
 }
 
-func documentTagsContainText(metadata *DocumentMetadata, q string) bool {
-	return tagsContainText(metadata.GetTags(), q)
-}
-
-func documentMatchSearch(metadata *DocumentMetadata, q string) bool {
+func tagsMatchSearch(tags []string, q string) bool {
 	q = strings.TrimSpace(q)
 	if q == "" {
 		return true
@@ -169,16 +165,16 @@ func documentMatchSearch(metadata *DocumentMetadata, q string) bool {
 		if separatorPos == 0 {
 			return false
 		}
-		return documentMatchSearch(metadata, q[:separatorPos]) && documentMatchSearch(metadata, q[separatorPos+1:])
+		return tagsMatchSearch(tags, q[:separatorPos]) && tagsMatchSearch(tags, q[separatorPos+1:])
 	} else if strings.HasPrefix(q, "|") {
 		q = strings.TrimSpace(q[1:])
 		separatorPos := strings.Index(q, " ")
 		if separatorPos == 0 {
 			return false
 		}
-		return documentMatchSearch(metadata, q[:separatorPos]) || documentMatchSearch(metadata, q[separatorPos+1:])
+		return tagsMatchSearch(tags, q[:separatorPos]) || tagsMatchSearch(tags, q[separatorPos+1:])
 	} else {
-		return documentTagsContainText(metadata, q)
+		return tagsContainText(tags, q)
 	}
 }
 
@@ -197,7 +193,7 @@ func (repo *GitDocsRepository) SearchDocuments(category string, q string) ([]str
 			return result, "cannot load one metadata"
 		}
 
-		if documentMatchSearch(metadata, q) {
+		if tagsMatchSearch(metadata.GetTags(), q) {
 			result = append(result, document)
 		}
 	}
