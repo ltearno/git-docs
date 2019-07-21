@@ -1,7 +1,1 @@
-# {{ .Document.Name }}
-
-## Summary
-
-## Details
-
-Thanks !
+"# {{ .Document.Name }}\n\n## Summary\n\nSALUTLULU LU HLDAJD KZJ GDHZ\n\n## Details\n\nThanks !"
