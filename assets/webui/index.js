@@ -20,7 +20,7 @@ const memoize = f => {
 
 
 
-function afterFetch(responseContentType = 'application/json') {
+const afterFetch = memoize((responseContentType = 'application/json') => {
     return (response, error) => {
         if (error)
             return null
@@ -35,7 +35,7 @@ function afterFetch(responseContentType = 'application/json') {
         else
             return response.text()
     }
-}
+})
 
 function getData(url, responseContentType = 'application/json') {
     return fetch(
