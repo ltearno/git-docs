@@ -266,7 +266,8 @@ function drawDocumentEdition(category, name) {
     const contentElement = document.createElement('div')
     contentElement.innerHTML += `<h2>Content</h2>`
     documentElement.appendChild(contentElement)
-    documentElement.appendChild(elFromHtml(`<button onclick='appStateSetDocument("${name}", false, false)' class="mui-btn mui-btn--raised">Cancel</button>`))
+    documentElement.appendChild(elFromHtml(`<button onclick='appStateSetDocument("${name}", false, false)' class="mui-btn mui-btn--flat">Cancel</button>`))
+    documentElement.appendChild(elFromHtml(`<button onclick='deleteDocument("${name}")' class="delete mui-btn mui-btn--flat mui-btn--danger">Delete</button>`))
     documentElement.appendChild(elFromHtml(`<button class="validate-edit mui-btn mui-btn--primary mui-btn--raised">Validate</button>`))
 
     el('board-opened-documents').appendChild(documentElement)
@@ -331,7 +332,8 @@ function drawDocument(category, name) {
     const contentElement = document.createElement('div')
     documentElement.appendChild(contentElement)
     documentElement.appendChild(elFromHtml('<div class="mui-divider"></div>'))
-    documentElement.appendChild(elFromHtml(`<button onclick='appStateSetDocument("${name}", true, false)' class="mui-btn mui-btn--primary mui-btn--flat">Edit document</button>`))
+    documentElement.appendChild(elFromHtml(`<button onclick='deleteDocument("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">Delete</button>`))
+    documentElement.appendChild(elFromHtml(`<button onclick='appStateSetDocument("${name}", true, false)' class="mui-btn mui-btn--primary mui-btn--flat">Edit</button>`))
 
     documentElement.querySelector('#document-add-tag-form').addEventListener('submit', event => {
         event.preventDefault()
@@ -417,7 +419,7 @@ function loadDocuments(category, search, split) {
 
         getData(q ? `/api/documents/${category}/?q=${encodeURIComponent(q)}` : `/api/documents/${category}`)
             .then(documents => {
-                let prep = documents.map(name => `<div><span style='cursor: pointer;' onclick='appStateSetDocument("${name}", false, false)'>${name}</span>&nbsp;<span x-id='tags'></span>&nbsp;&nbsp;&nbsp;<button onclick='deleteDocument("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
+                let prep = documents.map(name => `<div><span style='cursor: pointer;' onclick='appStateSetDocument("${name}", false, false)'>${name}</span>&nbsp;<span x-id='tags'></span></div>`).join('')
 
                 let columnDocumentsElement = elFromHtml(`<div class='mui-panel'>${prep}</div>`)
 
