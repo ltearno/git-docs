@@ -6,4 +6,4 @@ SALUTLULU LU HLDAJD KZJ GDHZ
 
 ## Details
 
-Thanks !"
+Thanks !
