@@ -125,6 +125,9 @@ let appState = {
     category: null,
     document: null,
     modeEditDocument: false,
+
+    search: "",
+    split: ""
 }
 
 function appStateSetCategory(category, dbChanged = false) {
@@ -135,6 +138,19 @@ function appStateSetCategory(category, dbChanged = false) {
     appState.document = null
 
     appStateAfterChange()
+}
+
+function appStateSetBoardSearch(search, split) {
+    search = search || ""
+    split = split || ""
+
+    if (search == appState.search && split == appState.split)
+        return
+
+    appState.search = search
+    appState.split = split
+
+    loadDocuments(appState.category, appState.search, appState.split)
 }
 
 function appStateSetDocument(document, modeEditDocument, dbChanged = false) {
@@ -152,15 +168,15 @@ function appStateSetDocument(document, modeEditDocument, dbChanged = false) {
 
 function appStateAfterChange() {
     loadStatus()
-    loadDocuments()
+    loadDocuments(appState.category, appState.search, appState.split)
     drawDocumentDetail()
 }
 
 function drawDocumentDetail() {
     if (appState.modeEditDocument)
-        drawDocumentEdition(appState.document)
+        drawDocumentEdition(appState.category, appState.document)
     else
-        drawDocument(appState.document)
+        drawDocument(appState.category, appState.document)
 }
 
 
@@ -173,7 +189,7 @@ function clear() {
     el('board-opened-documents').innerHTML = ''
 }
 
-function drawDocumentEdition(name) {
+function drawDocumentEdition(category, name) {
     el('board-opened-documents').innerHTML = ''
 
     if (!name)
@@ -192,7 +208,7 @@ function drawDocumentEdition(name) {
 
     documentElement.querySelector('#name-input').value = name
 
-    getData(`/api/documents/issues/${name}/content`, 'application/mardown')
+    getData(`/api/documents/${category}/${name}/content`, 'application/mardown')
         .then(content => contentElement.innerHTML += `<textarea class='document-content-textarea' style='width:80em;height:30em;'>${content}</textarea>`)
         .catch(err => log(`get content for ${name} failed`))
 
@@ -208,7 +224,7 @@ function drawDocumentEdition(name) {
         const newName = documentElement.querySelector('#name-input').value
         if (newName != name) {
             waitCount++
-            postData(`/api/documents/issues/${name}/rename`, { name: newName })
+            postData(`/api/documents/${category}/${name}/rename`, { name: newName })
                 .then(_ => {
                     log(`renamed document ${name}`)
                     maybeReload(newName)
@@ -219,7 +235,7 @@ function drawDocumentEdition(name) {
         const newContent = documentElement.getElementsByClassName('document-content-textarea').item(0).value
         if (newContent) {
             waitCount++
-            putData(`/api/documents/issues/${name}/content`, newContent, 'application/markdown')
+            putData(`/api/documents/${category}/${name}/content`, newContent, 'application/markdown')
                 .then(_ => {
                     log(`updated document ${name} content`)
                     maybeReload(newName)
@@ -234,7 +250,7 @@ function drawDocumentEdition(name) {
     })
 }
 
-function drawDocument(name) {
+function drawDocument(category, name) {
     el('board-opened-documents').innerHTML = ''
 
     if (!name)
@@ -258,12 +274,12 @@ function drawDocument(name) {
 
         let tag = documentElement.querySelector('#document-add-tag-text').value
 
-        addTagToDocument(name, tag)
+        addTagToDocument(category, name, tag)
     })
 
     el('board-opened-documents').appendChild(documentElement)
 
-    getData(`/api/documents/issues/${name}/metadata`)
+    getData(`/api/documents/${category}/${name}/metadata`)
         .then(metadata => {
             if (metadata && metadata.tags) {
                 metadataElement.innerHTML += metadata.tags.map(tagToHtmlBadge).join('')
@@ -273,7 +289,7 @@ function drawDocument(name) {
             }
         })
 
-    getData(`/api/documents/issues/${name}/content?interpolated=true`, 'application/markdown')
+    getData(`/api/documents/${category}/${name}/content?interpolated=true`, 'application/markdown')
         .then(content => {
             contentElement.innerHTML += marked(content)
         })
@@ -284,8 +300,8 @@ function fetchCategories() {
     return getData(`/api/categories`)
 }
 
-function addTagToDocument(name, tagToAdd) {
-    getData(`/api/documents/issues/${name}/metadata`)
+function addTagToDocument(category, name, tagToAdd) {
+    getData(`/api/documents/${category}/${name}/metadata`)
         .then(metadata => {
             let update = false
 
@@ -305,7 +321,7 @@ function addTagToDocument(name, tagToAdd) {
             }
 
             if (update) {
-                putData(`/api/documents/issues/${name}/metadata`, metadata)
+                putData(`/api/documents/${category}/${name}/metadata`, metadata)
                     .then(_ => {
                         log(`update document metadata ${name}`)
                         appStateSetDocument(name, false, true)
@@ -319,18 +335,8 @@ function addTagToDocument(name, tagToAdd) {
         .catch(err => log(`get metadata for ${name} failed`))
 }
 
-function loadDocuments() {
-    let search = el('search-document').value || null
-    let columns = (el('columns-document').value || '').split(",").map(v => v.trim())
-
-    if (search)
-        localStorage.setItem('search-document', search)
-    else
-        localStorage.removeItem('search-document')
-    if (columns)
-        localStorage.setItem('columns-document', columns)
-    else
-        localStorage.removeItem('columns-document')
+function loadDocuments(category, search, split) {
+    let columns = split.split(",").map(v => v.trim())
 
     if (!columns.length)
         columns.push(null)
@@ -349,7 +355,7 @@ function loadDocuments() {
             columnElement.style.marginLeft = '1em'
         columnsElement.appendChild(columnElement)
 
-        getData(q ? `/api/documents/issues/?q=${encodeURIComponent(q)}` : "/api/documents/issues")
+        getData(q ? `/api/documents/${category}/?q=${encodeURIComponent(q)}` : `/api/documents/${category}`)
             .then(documents => {
                 let prep = documents.map(name => `<div><span onclick='appStateSetDocument("${name}", false, false)'>${name}</span>&nbsp;<span x-id='tags'></span>&nbsp;&nbsp;&nbsp;<button onclick='deleteDocument("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
 
@@ -365,7 +371,7 @@ function loadDocuments() {
                     let loadedDocumentTags = documentToFetchTags++
                     let name = documents[loadedDocumentTags]
 
-                    getData(`/api/documents/issues/${name}/metadata`)
+                    getData(`/api/documents/${category}/${name}/metadata`)
                         .then(metadata => {
                             if (metadata && metadata.tags)
                                 columnDocumentsElement.children.item(loadedDocumentTags).querySelector('[x-id=tags]').innerHTML = metadata.tags.map(tagToHtmlBadge).join('')
@@ -424,8 +430,8 @@ function addDocument(name) {
 }
 
 function installUi() {
-    el('search-document').value = localStorage.getItem('search-document') || null
-    el('columns-document').value = localStorage.getItem('columns-document') || null
+    appState.search = el('search-document').value = localStorage.getItem('search-document') || ''
+    appState.split = el('columns-document').value = localStorage.getItem('columns-document') || ''
 
     let loadDocumentsTriggered = false
     const maybeLoadDocuments = () => {
@@ -435,7 +441,20 @@ function installUi() {
         loadDocumentsTriggered = true
         setTimeout(() => {
             loadDocumentsTriggered = false
-            loadDocuments()
+
+            let search = el('search-document').value || ''
+            let split = el('columns-document').value || ''
+
+            if (search)
+                localStorage.setItem('search-document', search)
+            else
+                localStorage.removeItem('search-document')
+            if (split)
+                localStorage.setItem('columns-document', split)
+            else
+                localStorage.removeItem('columns-document')
+
+            appStateSetBoardSearch(search, split)
         }, 50)
     }
     el('search-document').addEventListener('input', event => {
