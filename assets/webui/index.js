@@ -1,9 +1,9 @@
-const badgeColorClass = tag => {
-    let c = 0
-    for (let i = 0; i < tag.length; i++) {
-        c += tag.charCodeAt(i) * 5
-    }
-    return `badge-color-${c % 4}`
+const el = document.getElementById.bind(document)
+
+const elFromHtml = html => {
+    const e = document.createElement('div')
+    e.innerHTML = html
+    return e.children.item(0)
 }
 
 const memoize = f => {
@@ -17,15 +17,98 @@ const memoize = f => {
     }
 }
 
+
+
+
+function afterFetch(responseContentType = 'application/json') {
+    return (response, error) => {
+        if (error)
+            return null
+
+        if (!response.ok) {
+            log(`bad response : ${JSON.stringify(response)}`)
+            return null
+        }
+
+        if (responseContentType == 'application/json')
+            return response.json()
+        else
+            return response.text()
+    }
+}
+
+function getData(url, responseContentType = 'application/json') {
+    return fetch(
+        url, {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache',
+            credentials: 'same-origin',
+            redirect: 'follow',
+            referrer: 'no-referrer'
+        })
+        .then(afterFetch(responseContentType))
+}
+
+function postData(url = '', data = {}, contentType = 'application/json', responseContentType = 'application/json') {
+    return fetch(
+        url, {
+            method: 'POST',
+            mode: 'cors',
+            cache: 'no-cache',
+            credentials: 'same-origin',
+            redirect: 'follow',
+            referrer: 'no-referrer',
+            headers: { "Content-Type": contentType },
+            body: contentType == 'application/json' ? JSON.stringify(data) : data
+        })
+        .then(afterFetch(responseContentType))
+}
+
+function putData(url = '', data = {}, contentType = 'application/json', responseContentType = 'application/json') {
+    return fetch(
+        url, {
+            method: 'PUT',
+            mode: 'cors',
+            cache: 'no-cache',
+            credentials: 'same-origin',
+            redirect: 'follow',
+            referrer: 'no-referrer',
+            headers: { "Content-Type": contentType },
+            body: contentType == 'application/json' ? JSON.stringify(data) : data
+        })
+        .then(afterFetch(responseContentType))
+}
+
+function deleteData(url = '', data = {}, contentType = 'application/json', responseContentType = 'application/json') {
+    return fetch(
+        url, {
+            method: 'DELETE',
+            mode: 'cors',
+            cache: 'no-cache',
+            credentials: 'same-origin',
+            redirect: 'follow',
+            referrer: 'no-referrer',
+            headers: { "Content-Type": contentType },
+            body: contentType == 'application/json' ? JSON.stringify(data) : data
+        })
+        .then(afterFetch(responseContentType))
+}
+
+
+
+
+const badgeColorClass = tag => {
+    let c = 0
+    for (let i = 0; i < tag.length; i++) {
+        c += tag.charCodeAt(i) * 5
+    }
+    return `badge-color-${c % 4}`
+}
+
 const tagToHtmlBadge = memoize(tag => `<div class="badge ${badgeColorClass(tag)}">${tag}</div>`)
 
-const el = document.getElementById.bind(document)
 
-const elFromHtml = html => {
-    const e = document.createElement('div')
-    e.innerHTML = html
-    return e.children.item(0)
-}
 
 let logMessages = []
 const log = msg => {
@@ -35,83 +118,53 @@ const log = msg => {
     el('log').innerHTML = logMessages.map(msg => `<div>${msg}</div>`).join('')
 }
 
-function getData(url) {
-    return fetch(url, {
-        method: 'GET',
-        mode: 'cors',
-        cache: 'no-cache',
-        credentials: 'same-origin',
-        redirect: 'follow',
-        referrer: 'no-referrer'
-    })
-        .then(response => response.json())
+
+
+
+let appState = {
+    category: null,
+    document: null,
+    modeEditDocument: false,
 }
 
-function postData(url = '', data = {}) {
-    return fetch(url, {
-        method: 'POST', // *GET, POST, PUT, DELETE, etc.
-        mode: 'cors', // no-cors, cors, *same-origin
-        cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-        credentials: 'same-origin', // include, *same-origin, omit
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        redirect: 'follow', // manual, *follow, error
-        referrer: 'no-referrer', // no-referrer, *client
-        body: JSON.stringify(data), // body data type must match "Content-Type" header
-    })
-        .then(response => {
-            if (!response.ok) {
-                log(`post to ${url} failed`)
-                return
-            }
+function appStateSetCategory(category) {
+    if (category == appState.category)
+        return
 
-            log(`OK post ${url}`)
-            return response.json()
-        })
-        .catch(err => log(`post to ${url} failed`))
+    appState.category = category
+    appState.document = null
+
+    // TODO : redraw full UI
 }
 
-function putData(url = '', data = {}) {
-    return fetch(url, {
-        method: 'PUT',
-        mode: 'cors',
-        cache: 'no-cache',
-        credentials: 'same-origin',
-        headers: {
-            'Content-Type': typeof data == "string" ? "application/markdown" : 'application/json'
-        },
-        redirect: 'follow',
-        referrer: 'no-referrer',
-        body: typeof data == "string" ? data : JSON.stringify(data)
-    })
-        .then(response => response.json())
-        .catch(err => log(`post to ${url} failed`))
+function appStateSetDocument(document, modeEditDocument) {
+    if (document == appState.document && modeEditDocument == appState.modeEditDocument)
+        return
+
+    appState.document = document
+    appState.modeEditDocument = modeEditDocument
+
+    drawDocumentDetail()
 }
 
-function deleteData(url = '', data = {}) {
-    return fetch(url, {
-        method: 'DELETE',
-        mode: 'cors',
-        cache: 'no-cache',
-        credentials: 'same-origin',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        redirect: 'follow',
-        referrer: 'no-referrer',
-        body: JSON.stringify(data)
-    })
-        .then(response => response.json())
-        .catch(err => log(`delete to ${url} failed`))
+function drawDocumentDetail() {
+    if (appState.modeEditDocument)
+        drawDocumentEdition(appState.document)
+    else
+        drawDocument(appState.document)
 }
+
+
+
+
+
 
 function clear() {
     el('board-documents-ul').innerHTML = ''
     el('board-opened-documents').innerHTML = ''
 }
 
-function editDocument(name) {
+function drawDocumentEdition(name) {
     el('board-opened-documents').innerHTML = ''
 
     if (!name)
@@ -123,15 +176,14 @@ function editDocument(name) {
     const contentElement = document.createElement('div')
     contentElement.innerHTML += `<h2>Content</h2>`
     documentElement.appendChild(contentElement)
-    documentElement.appendChild(elFromHtml(`<button onclick='showDocument("${name}")' class="mui-btn mui-btn--raised">Cancel</button>`))
+    documentElement.appendChild(elFromHtml(`<button onclick='appStateSetDocument("${name}", false)' class="mui-btn mui-btn--raised">Cancel</button>`))
     documentElement.appendChild(elFromHtml(`<button class="validate-edit mui-btn mui-btn--primary mui-btn--raised">Validate</button>`))
 
     el('board-opened-documents').appendChild(documentElement)
 
     documentElement.querySelector('#name-input').value = name
 
-    fetch(`/api/documents/issues/${name}/content`)
-        .then(response => response.text())
+    getData(`/api/documents/issues/${name}/content`, 'application/mardown')
         .then(content => contentElement.innerHTML += `<textarea class='document-content-textarea' style='width:80em;height:30em;'>${content}</textarea>`)
         .catch(err => log(`get content for ${name} failed`))
 
@@ -158,7 +210,7 @@ function editDocument(name) {
         const newContent = documentElement.getElementsByClassName('document-content-textarea').item(0).value
         if (newContent) {
             waitCount++
-            putData(`/api/documents/issues/${name}/content`, newContent)
+            putData(`/api/documents/issues/${name}/content`, newContent, 'application/markdown')
                 .then(_ => {
                     log(`updated document ${name} content`)
                     maybeReload(newName)
@@ -171,6 +223,56 @@ function editDocument(name) {
 
         maybeReload()
     })
+}
+
+function drawDocument(name) {
+    el('board-opened-documents').innerHTML = ''
+
+    if (!name)
+        return
+
+    const documentElement = document.createElement('div')
+    documentElement.classList.add('mui-panel')
+    documentElement.innerHTML += `<div class='mui--text-dark-secondary mui--text-caption' style='padding-top:1em;padding-bottom:1.7em;'>${name}</div>`
+    const metadataElement = document.createElement('div')
+    documentElement.appendChild(metadataElement)
+    documentElement.appendChild(elFromHtml(`<form id='document-add-tag-form'>Tags: <label><input id='document-add-tag-text'/></label><button role='submit' class='mui-btn mui-btn--primary mui-btn--flat'>add tag</button></form>`))
+    documentElement.appendChild(elFromHtml('<div class="mui-divider"></div>'))
+    const contentElement = document.createElement('div')
+    documentElement.appendChild(contentElement)
+    documentElement.appendChild(elFromHtml('<div class="mui-divider"></div>'))
+    documentElement.appendChild(elFromHtml(`<button onclick='appStateSetDocument("${name}", true)' class="mui-btn mui-btn--primary mui-btn--flat">Edit document</button>`))
+
+    documentElement.querySelector('#document-add-tag-form').addEventListener('submit', event => {
+        event.preventDefault()
+        event.stopPropagation()
+
+        let tag = documentElement.querySelector('#document-add-tag-text').value
+
+        addTagToDocument(name, tag)
+    })
+
+    el('board-opened-documents').appendChild(documentElement)
+
+    getData(`/api/documents/issues/${name}/metadata`)
+        .then(metadata => {
+            if (metadata && metadata.tags) {
+                metadataElement.innerHTML += metadata.tags.map(tagToHtmlBadge).join('')
+            }
+            else {
+                metadataElement.innerHTML += `<pre>${JSON.stringify(metadata, null, 2)}</pre>`
+            }
+        })
+
+    getData(`/api/documents/issues/${name}/content?interpolated=true`, 'application/markdown')
+        .then(content => {
+            contentElement.innerHTML += marked(content)
+        })
+        .catch(err => log(`get content for ${name} failed`))
+}
+
+function fetchCategories() {
+    return getData(`/api/categories`)
 }
 
 function addTagToDocument(name, tagToAdd) {
@@ -194,7 +296,6 @@ function addTagToDocument(name, tagToAdd) {
             }
 
             if (update) {
-                // update metadata
                 putData(`/api/documents/issues/${name}/metadata`, metadata)
                     .then(_ => {
                         log(`update document metadata ${name}`)
@@ -207,58 +308,6 @@ function addTagToDocument(name, tagToAdd) {
             }
         })
         .catch(err => log(`get metadata for ${name} failed`))
-}
-
-function showDocument(name) {
-    el('board-opened-documents').innerHTML = ''
-
-    if (!name)
-        return
-
-    const documentElement = document.createElement('div')
-    documentElement.classList.add('mui-panel')
-    documentElement.innerHTML += `<div class='mui--text-dark-secondary mui--text-caption' style='padding-top:1em;padding-bottom:1.7em;'>${name}</div>`
-    const metadataElement = document.createElement('div')
-    documentElement.appendChild(metadataElement)
-    documentElement.appendChild(elFromHtml(`<form id='document-add-tag-form'>Tags: <label><input id='document-add-tag-text'/></label><button role='submit' class='mui-btn mui-btn--primary mui-btn--flat'>add tag</button></form>`))
-    documentElement.appendChild(elFromHtml('<div class="mui-divider"></div>'))
-    const contentElement = document.createElement('div')
-    documentElement.appendChild(contentElement)
-    documentElement.appendChild(elFromHtml('<div class="mui-divider"></div>'))
-    documentElement.appendChild(elFromHtml(`<button onclick='editDocument("${name}")' class="mui-btn mui-btn--primary mui-btn--flat">Edit document</button>`))
-
-    documentElement.querySelector('#document-add-tag-form').addEventListener('submit', event => {
-        event.preventDefault()
-        event.stopPropagation()
-
-        let tag = documentElement.querySelector('#document-add-tag-text').value
-
-        addTagToDocument(name, tag)
-    })
-
-    el('board-opened-documents').appendChild(documentElement)
-
-    getData(`/api/documents/issues/${name}/metadata`)
-        .then(metadata => {
-            if (metadata && metadata.tags) {
-                metadataElement.innerHTML += metadata.tags.map(tagToHtmlBadge).join('')
-            }
-            else {
-                metadataElement.innerHTML += `<pre>${JSON.stringify(metadata, null, 2)}</pre>`
-            }
-        })
-        .catch(err => log(`get metadata for ${name} failed`))
-
-    fetch(`/api/documents/issues/${name}/content?interpolated=true`)
-        .then(response => response.text())
-        .then(content => {
-            contentElement.innerHTML += marked(content)
-        })
-        .catch(err => log(`get content for ${name} failed`))
-}
-
-function fetchCategories() {
-    return getData(`/api/categories`)
 }
 
 function loadDocuments() {
@@ -293,7 +342,7 @@ function loadDocuments() {
 
         getData(q ? `/api/documents/issues/?q=${encodeURIComponent(q)}` : "/api/documents/issues")
             .then(documents => {
-                let prep = documents.map(name => `<div><span onclick='showDocument("${name}")'>${name}</span>&nbsp;<span x-id='tags'></span>&nbsp;&nbsp;&nbsp;<button onclick='deleteDocument("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
+                let prep = documents.map(name => `<div><span onclick='appStateSetDocument("${name}", false)'>${name}</span>&nbsp;<span x-id='tags'></span>&nbsp;&nbsp;&nbsp;<button onclick='deleteDocument("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
 
                 let columnDocumentsElement = elFromHtml(`<div class='mui-panel'>${prep}</div>`)
 
@@ -348,7 +397,7 @@ function loadStatus() {
 }
 
 function reloadWithDocument(document) {
-    showDocument(document)
+    appStateSetDocument(document, false)
     loadStatus()
     loadDocuments()
 }
@@ -417,7 +466,7 @@ function installUi() {
         };
 
         //var $overlayEl = $(mui.overlay('on', options));
-        
+
         overlayEl.appendChild($sidedrawerEl)
         setTimeout(function () {
             $sidedrawerEl.classList.add('active')
