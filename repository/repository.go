@@ -106,8 +106,6 @@ func readFile(path string) ([]byte, interface{}) {
 		return nil, "cannot read"
 	}
 
-	fmt.Printf("read from file %s\n%s", path, content)
-
 	return content, nil
 }
 

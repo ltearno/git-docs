@@ -169,7 +169,7 @@ function appStateSetDocument(document, modeEditDocument, dbChanged = false) {
 function appStateAfterChange() {
     loadStatus()
     loadCategories(appState.category)
-    loadTags()
+    loadTags(appState.category)
     loadDocuments(appState.category, appState.search, appState.split)
     drawDocumentDetail()
 }
@@ -192,8 +192,8 @@ function fetchCategories() {
     return getData(`/api/categories`)
 }
 
-function deleteDocument(name) {
-    deleteData(`/api/documents/issues/${name}`)
+function deleteDocument(category, name) {
+    deleteData(`/api/documents/${category}/${name}`)
         .then(_ => {
             log(`deleted document ${name}`)
             appStateSetDocument(null, false, true)
@@ -201,8 +201,8 @@ function deleteDocument(name) {
         .catch(err => log(`deleteDocument ${name} failed`))
 }
 
-function addDocument(name) {
-    postData(`/api/documents/issues/${name}`, {})
+function addDocument(category, name) {
+    postData(`/api/documents/${category}/${name}`, {})
         .then(_ => {
             log(`add document ${name}`)
             appStateSetDocument(name, false, true)
@@ -267,7 +267,7 @@ function drawDocumentEdition(category, name) {
     contentElement.innerHTML += `<h2>Content</h2>`
     documentElement.appendChild(contentElement)
     documentElement.appendChild(elFromHtml(`<button onclick='appStateSetDocument("${name}", false, false)' class="mui-btn mui-btn--flat">Cancel</button>`))
-    documentElement.appendChild(elFromHtml(`<button onclick='deleteDocument("${name}")' class="delete mui-btn mui-btn--flat mui-btn--danger">Delete</button>`))
+    documentElement.appendChild(elFromHtml(`<button onclick='deleteDocument("${category}",${name}")' class="delete mui-btn mui-btn--flat mui-btn--danger">Delete</button>`))
     documentElement.appendChild(elFromHtml(`<button class="validate-edit mui-btn mui-btn--primary mui-btn--raised">Validate</button>`))
 
     el('board-opened-documents').appendChild(documentElement)
@@ -332,7 +332,7 @@ function drawDocument(category, name) {
     const contentElement = document.createElement('div')
     documentElement.appendChild(contentElement)
     documentElement.appendChild(elFromHtml('<div class="mui-divider"></div>'))
-    documentElement.appendChild(elFromHtml(`<button onclick='deleteDocument("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">Delete</button>`))
+    documentElement.appendChild(elFromHtml(`<button onclick='deleteDocument("${category}", ${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">Delete</button>`))
     documentElement.appendChild(elFromHtml(`<button onclick='appStateSetDocument("${name}", true, false)' class="mui-btn mui-btn--primary mui-btn--flat">Edit</button>`))
 
     documentElement.querySelector('#document-add-tag-form').addEventListener('submit', event => {
@@ -453,8 +453,8 @@ function loadDocuments(category, search, split) {
     }
 }
 
-function loadTags() {
-    getData("/api/tags/issues")
+function loadTags(category) {
+    getData(`/api/tags/${category}`)
         .then(tags => {
             el('tagsList').innerHTML = "All tags : " + tags.map(tagToHtmlBadge).join('')
         })
@@ -534,7 +534,7 @@ function installUi() {
         let name = el('new-document-name').value
         el('new-document-name').value = ''
 
-        addDocument(name)
+        addDocument(appState.category, name)
     })
 
     const $bodyEl = document.body
