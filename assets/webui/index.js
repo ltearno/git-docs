@@ -168,6 +168,7 @@ function appStateSetDocument(document, modeEditDocument, dbChanged = false) {
 
 function appStateAfterChange() {
     loadStatus()
+    loadTags()
     loadDocuments(appState.category, appState.search, appState.split)
     drawDocumentDetail()
 }
@@ -360,13 +361,25 @@ function drawDocument(category, name) {
 }
 
 function loadDocuments(category, search, split) {
-    let columns = split.split(",").map(v => v.trim())
+    if (!category) {
+        el('board-documents-ul').innerHTML = `No document can appear here until a category selected.`
+        return
+    }
 
+    let columns = split.split(",").map(v => v.trim())
     if (!columns.length)
         columns.push(null)
 
-    let columnsElement = el('board-documents-ul')
-    columnsElement.innerHTML = ''
+    let columnsElement = document.createElement('div')
+
+    let nbFinishedColumns = 0
+    const finishedOneColumn = () => {
+        nbFinishedColumns++
+        if (nbFinishedColumns != columns.length)
+            return
+
+        el('board-documents-ul').innerHTML = columnsElement.innerHTML
+    }
 
     let documentIndex = -1
     for (let column of columns) {
@@ -374,9 +387,7 @@ function loadDocuments(category, search, split) {
 
         let q = search ? (column ? `& ${search} ${column}` : search) : column
 
-        let columnElement = elFromHtml(`<div><div style='text-align: center;font-weight: bold;padding-bottom: .5em;'>${q || 'All'}</div></div>`)
-        if (documentIndex > 0)
-            columnElement.style.marginLeft = '1em'
+        let columnElement = elFromHtml(`<div><div style='text-align: center;font-weight: bold;padding-bottom: .5em;${documentIndex > 0 ? 'margin-left:1em;' : ''}'>${q || 'All'}</div></div>`)
         columnsElement.appendChild(columnElement)
 
         getData(q ? `/api/documents/${category}/?q=${encodeURIComponent(q)}` : `/api/documents/${category}`)
@@ -389,6 +400,7 @@ function loadDocuments(category, search, split) {
                 const maybeLoad = () => {
                     if (documentToFetchTags >= documents.length) {
                         columnElement.appendChild(columnDocumentsElement)
+                        finishedOneColumn()
                         return
                     }
 
@@ -412,8 +424,6 @@ function loadDocuments(category, search, split) {
             })
             .catch(err => log(`loadDocuments failed`))
     }
-
-    loadTags()
 }
 
 function loadTags() {
