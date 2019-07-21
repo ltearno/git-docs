@@ -127,23 +127,32 @@ let appState = {
     modeEditDocument: false,
 }
 
-function appStateSetCategory(category) {
-    if (category == appState.category)
+function appStateSetCategory(category, dbChanged = false) {
+    if (!dbChanged && category == appState.category)
         return
 
     appState.category = category
     appState.document = null
 
-    // TODO : redraw full UI
+    appStateAfterChange()
 }
 
-function appStateSetDocument(document, modeEditDocument) {
-    if (document == appState.document && modeEditDocument == appState.modeEditDocument)
+function appStateSetDocument(document, modeEditDocument, dbChanged = false) {
+    if (!dbChanged && document == appState.document && modeEditDocument == appState.modeEditDocument)
         return
 
     appState.document = document
     appState.modeEditDocument = modeEditDocument
 
+    if (dbChanged)
+        appStateAfterChange()
+    else
+        drawDocumentDetail()
+}
+
+function appStateAfterChange() {
+    loadStatus()
+    loadDocuments()
     drawDocumentDetail()
 }
 
@@ -176,7 +185,7 @@ function drawDocumentEdition(name) {
     const contentElement = document.createElement('div')
     contentElement.innerHTML += `<h2>Content</h2>`
     documentElement.appendChild(contentElement)
-    documentElement.appendChild(elFromHtml(`<button onclick='appStateSetDocument("${name}", false)' class="mui-btn mui-btn--raised">Cancel</button>`))
+    documentElement.appendChild(elFromHtml(`<button onclick='appStateSetDocument("${name}", false, false)' class="mui-btn mui-btn--raised">Cancel</button>`))
     documentElement.appendChild(elFromHtml(`<button class="validate-edit mui-btn mui-btn--primary mui-btn--raised">Validate</button>`))
 
     el('board-opened-documents').appendChild(documentElement)
@@ -193,7 +202,7 @@ function drawDocumentEdition(name) {
         const maybeReload = name => {
             waitCount--
             if (!waitCount)
-                reloadWithDocument(name)
+                appStateSetDocument(name, false, true)
         }
 
         const newName = documentElement.querySelector('#name-input').value
@@ -241,7 +250,7 @@ function drawDocument(name) {
     const contentElement = document.createElement('div')
     documentElement.appendChild(contentElement)
     documentElement.appendChild(elFromHtml('<div class="mui-divider"></div>'))
-    documentElement.appendChild(elFromHtml(`<button onclick='appStateSetDocument("${name}", true)' class="mui-btn mui-btn--primary mui-btn--flat">Edit document</button>`))
+    documentElement.appendChild(elFromHtml(`<button onclick='appStateSetDocument("${name}", true, false)' class="mui-btn mui-btn--primary mui-btn--flat">Edit document</button>`))
 
     documentElement.querySelector('#document-add-tag-form').addEventListener('submit', event => {
         event.preventDefault()
@@ -299,7 +308,7 @@ function addTagToDocument(name, tagToAdd) {
                 putData(`/api/documents/issues/${name}/metadata`, metadata)
                     .then(_ => {
                         log(`update document metadata ${name}`)
-                        reloadWithDocument(name)
+                        appStateSetDocument(name, false, true)
                     })
                     .catch(err => log(`updateDocument metadata ${name} failed`))
             }
@@ -342,7 +351,7 @@ function loadDocuments() {
 
         getData(q ? `/api/documents/issues/?q=${encodeURIComponent(q)}` : "/api/documents/issues")
             .then(documents => {
-                let prep = documents.map(name => `<div><span onclick='appStateSetDocument("${name}", false)'>${name}</span>&nbsp;<span x-id='tags'></span>&nbsp;&nbsp;&nbsp;<button onclick='deleteDocument("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
+                let prep = documents.map(name => `<div><span onclick='appStateSetDocument("${name}", false, false)'>${name}</span>&nbsp;<span x-id='tags'></span>&nbsp;&nbsp;&nbsp;<button onclick='deleteDocument("${name}")' class="delete mui-btn mui-btn--small mui-btn--flat mui-btn--danger">X</button></div>`).join('')
 
                 let columnDocumentsElement = elFromHtml(`<div class='mui-panel'>${prep}</div>`)
 
@@ -396,17 +405,11 @@ function loadStatus() {
         .catch(err => log(`loadStatus failed`))
 }
 
-function reloadWithDocument(document) {
-    appStateSetDocument(document, false)
-    loadStatus()
-    loadDocuments()
-}
-
 function deleteDocument(name) {
     deleteData(`/api/documents/issues/${name}`)
         .then(_ => {
-            log(`delete document ${name}`)
-            reloadWithDocument(null)
+            log(`deleted document ${name}`)
+            appStateSetDocument(null, false, true)
         })
         .catch(err => log(`deleteDocument ${name} failed`))
 }
@@ -415,7 +418,7 @@ function addDocument(name) {
     postData(`/api/documents/issues/${name}`, {})
         .then(_ => {
             log(`add document ${name}`)
-            reloadWithDocument(name)
+            appStateSetDocument(name, false, true)
         })
         .catch(err => log(`addDocument ${name} failed`))
 }
@@ -494,5 +497,5 @@ function installUi() {
 }
 
 installUi()
-loadDocuments()
-loadStatus()
+//appStateAfterChange()
+appStateSetCategory("issues", true)
