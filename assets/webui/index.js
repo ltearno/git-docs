@@ -136,6 +136,8 @@ function appStateSetCategory(category, dbChanged = false) {
 
     appState.category = category
     appState.document = null
+    appState.search = localStorage.getItem('search-document-' + encodeURIComponent(appState.category)) || ''
+    appState.split = localStorage.getItem('columns-document-' + encodeURIComponent(appState.category)) || ''
 
     appStateAfterChange()
 }
@@ -149,6 +151,9 @@ function appStateSetBoardSearch(search, split) {
 
     appState.search = search
     appState.split = split
+
+    localStorage.setItem('search-document-' + encodeURIComponent(appState.category), appState.search)
+    localStorage.setItem('columns-document-' + encodeURIComponent(appState.category), appState.split)
 
     loadDocuments(appState.category, appState.search, appState.split)
 }
@@ -393,6 +398,9 @@ function loadDocuments(category, search, split) {
         return
     }
 
+    el('search-document').value = search || ''
+    el('columns-document').value = split || ''
+
     let columns = split.split(",").map(v => v.trim())
     if (!columns.length)
         columns.push(null)
@@ -483,14 +491,11 @@ function loadCategories(currentCategory) {
             return
         }
 
-        el('board-categories').innerHTML = `Categories : ` + categories.map(category => `<div class='badge ${category == currentCategory ? 'badge-color-0' : ''}'>${category}</div>`).join('')
+        el('board-categories').innerHTML = `Categories : ` + categories.map(category => `<div onclick='appStateSetCategory("${category}",false)' class='badge ${category == currentCategory ? 'badge-color-0' : ''}'>${category}</div>`).join('')
     })
 }
 
 function installUi() {
-    appState.search = el('search-document').value = localStorage.getItem('search-document') || ''
-    appState.split = el('columns-document').value = localStorage.getItem('columns-document') || ''
-
     let lastTimeTriggered = 0
     const runLoadDocuments = () => {
         lastTimeTriggered = Date.now()
@@ -501,9 +506,7 @@ function installUi() {
 
         let search = el('search-document').value || ''
         let split = el('columns-document').value || ''
-        localStorage.setItem('search-document', search)
-        localStorage.setItem('columns-document', split)
-
+        
         appStateSetBoardSearch(search, split)
     }
     let timer = 0

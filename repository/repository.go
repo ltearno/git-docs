@@ -231,28 +231,80 @@ func (repo *GitDocsRepository) ensureCategoryDirectoryReady(category string) boo
 }
 
 func (repo *GitDocsRepository) ensureCategoryDocumentsDirectoryReady(category string) bool {
-	return repo.ensureCategoryDirectoryReady(category) && repo.ensureDirectoryReady(repo.getDocumentsPath(category))
+	ok := repo.ensureCategoryDirectoryReady(category)
+	if !ok {
+		return false
+	}
+
+	ok = repo.ensureDirectoryReady(repo.getDocumentsPath(category))
+	if !ok {
+		return false
+	}
+
+	return true
 }
 
-func (repo *GitDocsRepository) AddCategory(name string) (bool, interface{}) {
+func (repo *GitDocsRepository) ensureCategoryConfigurationDirectoryReady(category string) bool {
+	ok := repo.ensureCategoryDirectoryReady(category)
+	if !ok {
+		return false
+	}
+
+	ok = repo.ensureDirectoryReady(repo.getConfigurationPath(category))
+	if !ok {
+		return false
+	}
+
+	return true
+}
+
+func copyAsset(assetPath string, targetPath string) bool {
+	assetBytes, err := assetsgen.Asset(assetPath)
+	if err != nil {
+		return false
+	}
+
+	ok := writeFile(targetPath, string(assetBytes))
+	if !ok {
+		return false
+	}
+
+	return true
+}
+
+func (repo *GitDocsRepository) AddCategory(category string) (bool, interface{}) {
 	categories := repo.GetCategories()
-	if contains(categories, name) {
+	if contains(categories, category) {
 		return true, nil
 	}
 
-	categories = append(categories, name)
+	categories = append(categories, category)
 	ok := writeFileJson(repo.getCategoriesFilePath(), categories)
 	if !ok {
 		return false, "error write file"
 	}
 
-	ok = repo.ensureCategoryDirectoryReady(name)
+	ok = repo.ensureCategoryDocumentsDirectoryReady(category)
 	if !ok {
-		return false, "error init directory"
+		return false, "error init category documents directory"
 	}
 
-	return true, nil
+	ok = repo.ensureCategoryConfigurationDirectoryReady(category)
+	if !ok {
+		return false, "error init category configuration directory"
+	}
+
+	ok = ok && copyAsset("assets/models/model.md", repo.getConfigurationTemplateContentPath(category))
+	ok = ok && copyAsset("assets/models/model.json", repo.getConfigurationTemplateMetadataPath(category))
+	ok = ok && copyAsset("assets/models/workflow.json", repo.getConfigurationWorkflowPath(category))
+	ok = ok && copyAsset("assets/models/tags.json", repo.getConfigurationTagsPath(category))
+
+	return ok, nil
 }
+
+/*
+	Path locations
+*/
 
 func (repo *GitDocsRepository) getCategoryPath(category string) string {
 	return path.Join(repo.workingDir, category)
@@ -260,6 +312,22 @@ func (repo *GitDocsRepository) getCategoryPath(category string) string {
 
 func (repo *GitDocsRepository) getConfigurationPath(category string) string {
 	return path.Join(repo.getCategoryPath(category), "conf")
+}
+
+func (repo *GitDocsRepository) getConfigurationWorkflowPath(category string) string {
+	return path.Join(repo.getConfigurationPath(category), "workflow.json")
+}
+
+func (repo *GitDocsRepository) getConfigurationTemplateContentPath(category string) string {
+	return path.Join(repo.getConfigurationPath(category), "model.md")
+}
+
+func (repo *GitDocsRepository) getConfigurationTemplateMetadataPath(category string) string {
+	return path.Join(repo.getConfigurationPath(category), "model.json")
+}
+
+func (repo *GitDocsRepository) getConfigurationTagsPath(category string) string {
+	return path.Join(repo.getConfigurationPath(category), "tags.json")
 }
 
 func (repo *GitDocsRepository) getDocumentsPath(category string) string {
@@ -277,6 +345,9 @@ func (repo *GitDocsRepository) getDocumentMetadataFilePath(category string, name
 func (repo *GitDocsRepository) getDocumentContentFilePath(category string, name string) string {
 	return path.Join(repo.getDocumentDirPath(category, name), "content.md")
 }
+
+/*
+ */
 
 func (repo *GitDocsRepository) GetDocumentContent(category string, name string) (*string, interface{}) {
 	filePath := repo.getDocumentContentFilePath(category, name)
@@ -554,23 +625,24 @@ func (repo *GitDocsRepository) AddDocument(category string, name string) bool {
 
 	os.Mkdir(documentDir, 0755)
 
-	ok := writeFileJson(repo.getDocumentMetadataFilePath(category, name), DocumentMetadata{Tags: []string{}})
-	if !ok {
-		return false
+	documentMetadataModelBytes, err := readFile(repo.getConfigurationTemplateMetadataPath(category))
+	if err == nil {
+		ok := writeFile(repo.getDocumentMetadataFilePath(category, name), string(documentMetadataModelBytes))
+		if !ok {
+			return false
+		}
 	}
 
-	documentContentModelBytes, err := assetsgen.Asset("assets/models/issue.md")
-	if err != nil {
-		return false
-	}
-
-	ok = writeFile(repo.getDocumentContentFilePath(category, name), string(documentContentModelBytes))
-	if !ok {
-		return false
+	documentContentModelBytes, err := readFile(repo.getConfigurationTemplateContentPath(category))
+	if err == nil {
+		ok := writeFile(repo.getDocumentContentFilePath(category, name), string(documentContentModelBytes))
+		if !ok {
+			return false
+		}
 	}
 
 	if repo.gitRepositoryDir != nil {
-		ok = commitChanges(repo.gitRepositoryDir, fmt.Sprintf("documents() - added document %s", name), repo.workingDir)
+		ok := commitChanges(repo.gitRepositoryDir, fmt.Sprintf("documents() - added document %s", name), repo.workingDir)
 		if !ok {
 			return false
 		}

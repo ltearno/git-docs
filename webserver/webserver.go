@@ -167,6 +167,21 @@ func handlerGetCategories(w http.ResponseWriter, r *http.Request, p httprouter.P
 	jsonResponse(w, 200, categories)
 }
 
+func handlerPostCategories(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	name := p.ByName("category_name")
+
+	ok, err := server.repo.AddCategory(name)
+	if err != nil {
+		errorResponse(w, 500, "cannot create category")
+	}
+
+	if ok {
+		messageResponse(w, "category created")
+	} else {
+		messageResponse(w, "category cannot be created")
+	}
+}
+
 func handlerGetDocuments(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
 	category := p.ByName("category_name")
 
@@ -339,6 +354,7 @@ func (self *WebServer) Init(router *httprouter.Router) {
 	router.GET("/api/status", makeHandle(handlerStatusRestAPI, self))
 	router.GET("/api/tags/:category_name", makeHandle(handlerTagsRestAPI, self))
 	router.GET("/api/categories", makeHandle(handlerGetCategories, self))
+	router.POST("/api/categories/:category_name", makeHandle(handlerPostCategories, self))
 	router.GET("/api/documents/:category_name", makeHandle(handlerGetDocuments, self))
 	router.GET("/api/documents/:category_name/:document_name/metadata", makeHandle(handlerGetDocumentMetadata, self))
 	router.GET("/api/documents/:category_name/:document_name/content", makeHandle(handlerGetDocumentContent, self))
