@@ -29,6 +29,35 @@ func (metadata *DocumentMetadata) GetTags() []string {
 	return result
 }
 
+func (metadata *DocumentMetadata) AddTag(addedTag string) bool {
+	for _, tag := range (*metadata)["tags"].([]interface{}) {
+		if tag.(string) == addedTag {
+			return false
+		}
+	}
+
+	(*metadata)["tags"] = append((*metadata)["tags"].([]interface{}), interface{}(addedTag))
+
+	return true
+}
+
+func (metadata *DocumentMetadata) RemoveTag(removedTag string) bool {
+	newTags := []interface{}{}
+	done := false
+
+	for _, tag := range (*metadata)["tags"].([]interface{}) {
+		if tag.(string) != removedTag {
+			newTags = append(newTags, tag)
+		} else {
+			done = true
+		}
+	}
+
+	(*metadata)["tags"] = newTags
+
+	return done
+}
+
 func NewGitDocsRepository(gitRepositoryDir *string, workingDir string) *GitDocsRepository {
 	return &GitDocsRepository{
 		gitRepositoryDir,
@@ -146,6 +175,10 @@ func (repo *GitDocsRepository) GetAllTags(category string) ([]string, interface{
 }
 
 func tagsContainText(tags []string, q string) bool {
+	if q == "" {
+		return true
+	}
+
 	for _, tag := range tags {
 		if strings.Contains(strings.ToLower(tag), q) {
 			return true
@@ -159,6 +192,9 @@ func tagsMatchSearch(tags []string, q string) bool {
 	q = strings.TrimSpace(q)
 	if q == "" {
 		return true
+	} else if strings.HasPrefix(q, "!") {
+		q = strings.TrimSpace(q[1:])
+		return !tagsMatchSearch(tags, q)
 	} else if strings.HasPrefix(q, "&") {
 		q = strings.TrimSpace(q[1:])
 		separatorPos := strings.Index(q, " ")
@@ -423,6 +459,52 @@ func (repo *GitDocsRepository) GetDocumentMetadata(category string, name string)
 	return result, nil
 }
 
+func getTagsDifference(old []string, new []string) ([]string, []string) {
+	oldSet := map[string]bool{}
+	for _, tag := range old {
+		oldSet[tag] = true
+	}
+
+	listNew := []string{}
+
+	for _, tag := range new {
+		if _, ok := oldSet[tag]; !ok {
+			listNew = append(listNew, tag)
+		} else {
+			delete(oldSet, tag)
+		}
+	}
+
+	listOld := []string{}
+
+	for tag, value := range oldSet {
+		if value {
+			listOld = append(listOld, tag)
+		}
+	}
+
+	return listNew, listOld
+}
+
+type WorkflowElement struct {
+	Condition  string   `json:"condition"`
+	AddTags    []string `json:"addTags`
+	RemoveTags []string `json:"removeTags`
+}
+
+type WorkflowConfiguration map[string]WorkflowElement
+
+func executeWorkflow(config WorkflowElement, currentMetadata *DocumentMetadata, metadata *DocumentMetadata) {
+	if tagsMatchSearch(currentMetadata.GetTags(), config.Condition) {
+		for _, tagToAdd := range config.AddTags {
+			metadata.AddTag(tagToAdd)
+		}
+		for _, tagToRemove := range config.RemoveTags {
+			metadata.RemoveTag(tagToRemove)
+		}
+	}
+}
+
 func (repo *GitDocsRepository) SetDocumentMetadata(category string, name string, metadata *DocumentMetadata) (bool, interface{}) {
 	if strings.Contains(name, "/") {
 		return false, "invalid name"
@@ -434,12 +516,34 @@ func (repo *GitDocsRepository) SetDocumentMetadata(category string, name string,
 		}
 	}
 
+	filePath := repo.getDocumentMetadataFilePath(category, name)
+
+	currentMetadata := &DocumentMetadata{}
+	readFileJson(filePath, currentMetadata)
+
+	// process trigger
+	// TODO : should be recurrent, at the moment we don't trigger triggers for created and removed tags
+	workflowConfiguration := &WorkflowConfiguration{}
+	readFileJson(repo.getConfigurationWorkflowPath(category), workflowConfiguration)
+	addedTags, removedTags := getTagsDifference(currentMetadata.GetTags(), metadata.GetTags())
+	for _, addedTag := range addedTags {
+		config, ok := (*workflowConfiguration)[fmt.Sprintf("when-added-%s", addedTag)]
+		if ok {
+			executeWorkflow(config, currentMetadata, metadata)
+		}
+	}
+	for _, removedTag := range removedTags {
+		config, ok := (*workflowConfiguration)[fmt.Sprintf("when-removed-%s", removedTag)]
+		if ok {
+			executeWorkflow(config, currentMetadata, metadata)
+		}
+	}
+
 	bytes, err := json.Marshal(*metadata)
 	if err != nil {
 		return false, "json error"
 	}
 
-	filePath := repo.getDocumentMetadataFilePath(category, name)
 	ok := writeFile(filePath, string(bytes))
 	if !ok {
 		return false, "write file error"
