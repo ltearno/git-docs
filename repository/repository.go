@@ -118,6 +118,11 @@ func (repo *GitDocsRepository) GetAllTags(category string) ([]string, interface{
 	tagSet := map[string]bool{}
 	var result = []string{}
 
+	readFileJson(repo.getConfigurationTagsPath(category), &result)
+	for _, tag := range result {
+		tagSet[tag] = true
+	}
+
 	for _, document := range documents {
 		metadata, err := repo.GetDocumentMetadata(category, document)
 		if err != nil {
