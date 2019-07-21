@@ -9,5 +9,13 @@
             "todo",
             "a faire"
         ]
+    },
+    "when-added-doc": {
+        "condition": "",
+        "addTags": [
+            "to-be-redacted",
+            "hello",
+            "goodbye"
+        ]
     }
 }
