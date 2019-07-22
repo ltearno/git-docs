@@ -669,7 +669,10 @@ function installUi() {
         })
     }
 
-    el('new-category-button').addEventListener('click', () => {
+    el('new-category-form').addEventListener('submit', event => {
+        event.preventDefault()
+        event.stopPropagation()
+
         let name = el('new-category-name').value
         postData(`/api/categories/${name}`).then(() => {
             appStateSetCategory(name, true)

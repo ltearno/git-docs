@@ -271,6 +271,10 @@ func (repo *GitDocsRepository) ensureDirectoryReady(path string) bool {
 	return true
 }
 
+func (repo *GitDocsRepository) ensureWorkdirReady() bool {
+	return repo.ensureDirectoryReady(repo.workingDir)
+}
+
 func (repo *GitDocsRepository) ensureCategoryDirectoryReady(category string) bool {
 	return repo.ensureDirectoryReady(repo.getCategoryPath(category))
 }
@@ -318,13 +322,18 @@ func copyAsset(assetPath string, targetPath string) bool {
 }
 
 func (repo *GitDocsRepository) AddCategory(category string) (bool, interface{}) {
+	ok := repo.ensureWorkdirReady()
+	if !ok {
+		return false, "error write file"
+	}
+
 	categories := repo.GetCategories()
 	if contains(categories, category) {
 		return true, nil
 	}
 
 	categories = append(categories, category)
-	ok := writeFileJson(repo.getCategoriesFilePath(), categories)
+	ok = writeFileJson(repo.getCategoriesFilePath(), categories)
 	if !ok {
 		return false, "error write file"
 	}

@@ -184,6 +184,7 @@ func handlerPostCategories(w http.ResponseWriter, r *http.Request, p httprouter.
 	ok, err := server.repo.AddCategory(name)
 	if err != nil {
 		errorResponse(w, 500, "cannot create category")
+		return
 	}
 
 	if ok {
