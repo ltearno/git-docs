@@ -236,16 +236,17 @@ function addTagToDocument(category, name, tagToAdd, actionName) {
             }
 
             if (update) {
-                return getWorkflowPossibleActionNames(category, false, tagToAdd)
-                    .then(possibleActionNames => {
-                        log(`possible actions are ${JSON.stringify(possibleActionNames)}`)
-
-                        putData(`/api/documents/${category}/${name}/metadata?action_name=${encodeURIComponent(actionName)}`, metadata)
+                return chooseWorkflowAction(category, false, tagToAdd)
+                    .then(actionName => {
+                        putData(`/api/documents/${category}/${name}/metadata?action_name=${encodeURIComponent(actionName || '')}`, metadata)
                             .then(_ => {
                                 log(`update document metadata ${name}`)
                                 appStateSetDocument(name, false, true)
                             })
                             .catch(err => log(`updateDocument metadata ${name} failed`))
+                    })
+                    .catch(() => {
+                        log(`cancelled tag add`)
                     })
             }
             else {
@@ -255,25 +256,26 @@ function addTagToDocument(category, name, tagToAdd, actionName) {
 }
 
 function deleteTagToDocument(category, name, tagToRemove) {
-    // highly hacky, just to test ;)
-    let actionName = document.querySelector('#document-add-tag-action-name').value
-
     getData(`/api/documents/${category}/${name}/metadata`)
         .then(metadata => {
             if (!metadata || !metadata.tags || !metadata.tags.includes(tagToRemove))
                 return
 
-            getWorkflowPossibleActionNames(category, true, tagToRemove)
-                .then(possibleActionNames => {
-                    log(`possible actions are ${JSON.stringify(possibleActionNames)}`)
+            return chooseWorkflowAction(category, true, tagToRemove)
+                .then(actionName => {
+                    if (actionName)
+                        log(`choosen action : ${actionName}`)
 
                     metadata.tags = metadata.tags.filter(tag => tag != tagToRemove)
 
-                    putData(`/api/documents/${category}/${name}/metadata?action_name=${encodeURIComponent(actionName)}`, metadata)
+                    putData(`/api/documents/${category}/${name}/metadata?action_name=${encodeURIComponent(actionName || '')}`, metadata)
                         .then(_ => {
                             log(`update document metadata ${name}`)
                             appStateSetDocument(name, false, true)
                         })
+                })
+                .catch(() => {
+                    log(`cancelled tag remove`)
                 })
         })
 }
@@ -296,7 +298,50 @@ function getWorkflowPossibleActionNames(category, removal, tag) {
         })
 }
 
+function chooseWorkflowAction(category, removal, tag) {
+    return getWorkflowPossibleActionNames(category, removal, tag)
+        .then(possibleActionNames => {
+            if (!possibleActionNames || !possibleActionNames.length)
+                return null
+            if (possibleActionNames.length == 1)
+                return possibleActionNames[0]
 
+            let resolver = null
+            let rejecter = null
+            let promise = new Promise((resolve, reject) => {
+                resolver = resolve
+                rejecter = reject
+            })
+
+            let choiceUi = elFromHtml(`
+                <div class='mui-panel'>
+                    <h2>Please choose an action for ${removal ? 'removing' : 'adding'} the tag ${tag}</h2>
+                    <div class="mui--text-caption mui--text-dark-secondary">When tags are added or removed, a workflow can occur. This workflow may lead to different actions depending on your action's intent.</div>
+                    <div class="mui-divider"></div>
+                    <ul style='cursor:pointer;'>${possibleActionNames.map((actionName, i) => `<li x-id='action-${i}'>${actionName || 'DEFAULT'}</li>`).join('')}</ul>
+                    <button x-id='cancel' class="mui-btn mui-btn--flat">Cancel</button>
+                </div>
+            `)
+            choiceUi.style.width = '400px';
+            choiceUi.style.margin = '100px auto';
+            choiceUi.style.backgroundColor = '#fff';
+
+            for (let i = 0; i < possibleActionNames.length; i++) {
+                choiceUi.querySelector(`[x-id=action-${i}]`).addEventListener('click', () => {
+                    mui.overlay('off')
+                    resolver(possibleActionNames[i])
+                })
+            }
+            choiceUi.querySelector(`[x-id=cancel]`).addEventListener('click', () => {
+                mui.overlay('off')
+                rejecter(null)
+            })
+
+            mui.overlay('on', choiceUi)
+
+            return promise
+        })
+}
 
 
 
