@@ -1,6 +1,7 @@
 {
     "when-removed-todo": [
         {
+            "description": "normal operations",
             "condition": "| todo done",
             "addTags": [
                 "done",
@@ -13,6 +14,7 @@
             ]
         },
         {
+            "description": "you remove the 'todo' tag because the issue is now obsolete",
             "name": "garbage",
             "addTags": [
                 "to-delete",
