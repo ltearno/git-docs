@@ -1,22 +1,33 @@
 {
-    "when-removed-todo": {
-        "condition": "| todo done",
-        "addTags": [
-            "done",
-            "to-inspect"
-        ],
-        "removeTags": [
-            "todo",
-            "a faire",
-            "to-be-redacted"
-        ]
-    },
-    "when-added-doc": {
-        "condition": "",
-        "addTags": [
-            "to-be-redacted",
-            "hello",
-            "goodbye"
-        ]
-    }
+    "when-removed-todo": [
+        {
+            "condition": "| todo done",
+            "addTags": [
+                "done",
+                "to-inspect"
+            ],
+            "removeTags": [
+                "todo",
+                "a faire",
+                "to-be-redacted"
+            ]
+        },
+        {
+            "name": "garbage",
+            "addTags": [
+                "to-delete",
+                "to-terminate"
+            ]
+        }
+    ],
+    "when-added-doc": [
+        {
+            "condition": "",
+            "addTags": [
+                "to-be-redacted",
+                "hello",
+                "goodbye"
+            ]
+        }
+    ]
 }
