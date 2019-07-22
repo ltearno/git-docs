@@ -10,8 +10,8 @@ import (
 	"path"
 	"strings"
 
-	"../assetsgen"
-	"../tools"
+	"git-docs/assetsgen"
+	"git-docs/tools"
 )
 
 type GitDocsRepository struct {

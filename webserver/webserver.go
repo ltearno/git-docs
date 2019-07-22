@@ -12,8 +12,8 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 
-	"../assetsgen"
-	"../repository"
+	"git-docs/assetsgen"
+	"git-docs/repository"
 )
 
 type PageContext struct {

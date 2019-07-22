@@ -134,6 +134,8 @@ function appStateSetCategory(category, dbChanged = false) {
     if (!dbChanged && category == appState.category)
         return
 
+    localStorage.setItem('selected-category', category)
+
     appState.category = category
     appState.document = null
     appState.search = localStorage.getItem('search-document-' + encodeURIComponent(appState.category)) || ''
@@ -670,4 +672,15 @@ function installUi() {
 
 installUi()
 //appStateAfterChange()
-appStateSetCategory("issues", true)
+let selectedCategory = localStorage.getItem('selected-category')
+if (!selectedCategory || selectedCategory == "") {
+    fetchCategories().then(categories => {
+        if (!categories || !categories.length)
+            log(`no categories yet !`)
+        else
+            appStateSetCategory(categories[0], true)
+    })
+}
+else {
+    appStateSetCategory(selectedCategory, true)
+}
