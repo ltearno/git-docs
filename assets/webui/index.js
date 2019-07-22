@@ -674,6 +674,7 @@ function installUi() {
         event.stopPropagation()
 
         let name = el('new-category-name').value
+        el('new-category-name').value = null
         postData(`/api/categories/${name}`).then(() => {
             appStateSetCategory(name, true)
         })
