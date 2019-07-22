@@ -668,10 +668,17 @@ function installUi() {
             toToggle.style.display = toToggle.style.display == "none" ? "" : "none"
         })
     }
+
+    el('new-category-button').addEventListener('click', () => {
+        let name = el('new-category-name').value
+        postData(`/api/categories/${name}`).then(() => {
+            appStateSetCategory(name, true)
+        })
+    })
 }
 
 installUi()
-//appStateAfterChange()
+
 let selectedCategory = localStorage.getItem('selected-category')
 if (!selectedCategory || selectedCategory == "") {
     fetchCategories().then(categories => {
