@@ -103,7 +103,7 @@ const badgeColorClass = tag => {
     for (let i = 0; i < tag.length; i++) {
         c += tag.charCodeAt(i) * 5
     }
-    return `badge-color-${c % 4}`
+    return `badge-color-${c % 9}`
 }
 
 const tagToHtmlBadge = memoize(tag => `<div class="badge ${badgeColorClass(tag)}">${tag}</div>`)
@@ -433,7 +433,7 @@ function drawDocument(category, name) {
         event.stopPropagation()
 
         let tag = documentElement.querySelector('#document-add-tag-text').value
-        
+
         addTagToDocument(category, name, tag)
     })
 
