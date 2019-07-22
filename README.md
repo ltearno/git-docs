@@ -10,13 +10,13 @@ All data are stored in the git repository itself.
 
 Persistent data are stored as commited files (by default).
 
-Index files are stored in a git ignored directory. Index is incremental and follows the git commits to make operations blazing fast.
+Index files are stored in a git ignored directory. Index is incremental and follows the git commits to keep operations blazing fast.
 
 ## How to use ?
 
 Go inside a git repository and launch this to start serving the UI :
 
-    mgit serve
+    git-docs serve
 
 Then in a browser go to `http://127.0.0.1:8080/webui/index.html`
 
