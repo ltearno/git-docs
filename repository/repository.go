@@ -487,10 +487,11 @@ func getTagsDifference(old []string, new []string) ([]string, []string) {
 }
 
 type WorkflowElement struct {
-	Name       *string  `json:"name"`
-	Condition  *string  `json:"condition"`
-	AddTags    []string `json:"addTags"`
-	RemoveTags []string `json:"removeTags"`
+	Name        *string  `json:"name"`
+	Description *string  `json:"description"`
+	Condition   *string  `json:"condition"`
+	AddTags     []string `json:"addTags"`
+	RemoveTags  []string `json:"removeTags"`
 }
 
 type WorkflowConfiguration map[string][]WorkflowElement

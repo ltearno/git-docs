@@ -215,7 +215,7 @@ function addDocument(category, name) {
         .catch(err => log(`addDocument ${name} failed`))
 }
 
-function addTagToDocument(category, name, tagToAdd, actionName) {
+function addTagToDocument(category, name, tagToAdd) {
     return getData(`/api/documents/${category}/${name}/metadata`)
         .then(metadata => {
             let update = false
@@ -282,7 +282,7 @@ function deleteTagToDocument(category, name, tagToRemove) {
 
 // si action (add/rem tag) a un workflow, et que ce workflow a plusieurs alternatives, on fait choisir une de ces alternatives
 
-function getWorkflowPossibleActionNames(category, removal, tag) {
+function getWorkflowPossibleActions(category, removal, tag) {
     return getData(`/api/workflows/${category}`)
         .then(workflow => {
             if (!workflow)
@@ -293,18 +293,18 @@ function getWorkflowPossibleActionNames(category, removal, tag) {
             if (!elements || !elements.length)
                 return []
 
-            let actionNames = elements.map(element => element.name || null)
+            let actionNames = elements.map(element => ({ name: element.name || null, description: element.description || null }))
             return actionNames
         })
 }
 
 function chooseWorkflowAction(category, removal, tag) {
-    return getWorkflowPossibleActionNames(category, removal, tag)
-        .then(possibleActionNames => {
-            if (!possibleActionNames || !possibleActionNames.length)
+    return getWorkflowPossibleActions(category, removal, tag)
+        .then(possibleActions => {
+            if (!possibleActions || !possibleActions.length)
                 return null
-            if (possibleActionNames.length == 1)
-                return possibleActionNames[0]
+            if (possibleActions.length == 1)
+                return possibleActions[0].name
 
             let resolver = null
             let rejecter = null
@@ -318,7 +318,7 @@ function chooseWorkflowAction(category, removal, tag) {
                     <h2>Please choose an action for ${removal ? 'removing' : 'adding'} the tag ${tag}</h2>
                     <div class="mui--text-caption mui--text-dark-secondary">When tags are added or removed, a workflow can occur. This workflow may lead to different actions depending on your action's intent.</div>
                     <div class="mui-divider"></div>
-                    <ul style='cursor:pointer;'>${possibleActionNames.map((actionName, i) => `<li x-id='action-${i}'>${actionName || 'DEFAULT'}</li>`).join('')}</ul>
+                    <ul style='cursor:pointer;'>${possibleActions.map((action, i) => `<li x-id='action-${i}'>${action.name || 'DEFAULT'} ${action.description ? `<i>(${action.description})</i>` : ''}</li>`).join('')}</ul>
                     <button x-id='cancel' class="mui-btn mui-btn--flat">Cancel</button>
                 </div>
             `)
@@ -326,10 +326,10 @@ function chooseWorkflowAction(category, removal, tag) {
             choiceUi.style.margin = '100px auto';
             choiceUi.style.backgroundColor = '#fff';
 
-            for (let i = 0; i < possibleActionNames.length; i++) {
+            for (let i = 0; i < possibleActions.length; i++) {
                 choiceUi.querySelector(`[x-id=action-${i}]`).addEventListener('click', () => {
                     mui.overlay('off')
-                    resolver(possibleActionNames[i])
+                    resolver(possibleActions[i].name)
                 })
             }
             choiceUi.querySelector(`[x-id=cancel]`).addEventListener('click', () => {
@@ -420,7 +420,7 @@ function drawDocument(category, name) {
     documentElement.innerHTML += `<div class='mui--text-dark-secondary mui--text-caption' style='padding-top:1em;padding-bottom:1.7em;'>${name}</div>`
     const metadataElement = document.createElement('div')
     documentElement.appendChild(metadataElement)
-    documentElement.appendChild(elFromHtml(`<form id='document-add-tag-form'>Tags: <label><input id='document-add-tag-text'/></label>, action name: <label><input id='document-add-tag-action-name'/></label><button role='submit' class='mui-btn mui-btn--primary mui-btn--flat'>add tag</button></form>`))
+    documentElement.appendChild(elFromHtml(`<form id='document-add-tag-form'>Tags: <label><input id='document-add-tag-text'/></label> <button role='submit' class='mui-btn mui-btn--primary mui-btn--flat'>add tag</button></form>`))
     documentElement.appendChild(elFromHtml('<div class="mui-divider"></div>'))
     const contentElement = document.createElement('div')
     documentElement.appendChild(contentElement)
@@ -433,9 +433,8 @@ function drawDocument(category, name) {
         event.stopPropagation()
 
         let tag = documentElement.querySelector('#document-add-tag-text').value
-        let actionName = documentElement.querySelector('#document-add-tag-action-name').value
-
-        addTagToDocument(category, name, tag, actionName)
+        
+        addTagToDocument(category, name, tag)
     })
 
     const asyncCount = runAtLast => {

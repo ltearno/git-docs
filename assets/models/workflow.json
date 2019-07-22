@@ -1,6 +1,7 @@
 {
     "when-removed-todo": [
         {
+            "description": "normal operations",
             "condition": "| todo done",
             "addTags": [
                 "done",
@@ -11,11 +12,18 @@
                 "a faire",
                 "to-be-redacted"
             ]
+        },
+        {
+            "description": "you remove the 'todo' tag because the issue is now obsolete",
+            "name": "garbage",
+            "addTags": [
+                "to-delete",
+                "to-terminate"
+            ]
         }
     ],
     "when-added-doc": [
         {
-            "condition": "",
             "addTags": [
                 "to-be-redacted",
                 "hello",
