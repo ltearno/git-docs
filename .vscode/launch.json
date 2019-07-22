@@ -9,7 +9,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "/home/arnaud/repos/persos/magic-git/main.go",
+            "program": "/home/arnaud/go/src/git-docs/main.go",
             "env": {},
             "args": [
                 "serve"

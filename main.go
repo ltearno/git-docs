@@ -59,7 +59,7 @@ func main() {
 	}
 
 	if printUsage {
-		fmt.Printf("\nmgit usage :\n\n  mgit [OPTIONS] verbs...\n\nOPTIONS :\n\n")
+		fmt.Printf("\ngit-docs usage :\n\n  git-docs [OPTIONS] verbs...\n\nOPTIONS :\n\n")
 		flag.PrintDefaults()
 		return
 	}

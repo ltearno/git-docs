@@ -8,10 +8,10 @@ build-embed-assets:
 	go-bindata -o assetsgen/assets.go -pkg assetsgen assets/...
 
 build: build-embed-assets
-	go build -o mgit main.go
+	go install git-docs
 
 run-serve:
-	go run main.go serve
+	git-docs serve
 
 build-docker:
 	docker build . -t git-docs
