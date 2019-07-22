@@ -161,6 +161,17 @@ func handlerTagsRestAPI(w http.ResponseWriter, r *http.Request, p httprouter.Par
 	}
 }
 
+func handlerGetWorkflow(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	category := p.ByName("category_name")
+
+	workflowConfiguration, err := server.repo.GetWorkflow(category)
+	if err != nil {
+		errorResponse(w, 500, "internal error")
+	} else {
+		jsonResponse(w, 200, workflowConfiguration)
+	}
+}
+
 func handlerGetCategories(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
 	categories := server.repo.GetCategories()
 
@@ -354,6 +365,7 @@ func (self *WebServer) Init(router *httprouter.Router) {
 	router.GET("/webui/*requested_resource", makeHandle(handlerWebUi, self))
 	router.GET("/api/status", makeHandle(handlerStatusRestAPI, self))
 	router.GET("/api/tags/:category_name", makeHandle(handlerTagsRestAPI, self))
+	router.GET("/api/workflows/:category_name", makeHandle(handlerGetWorkflow, self))
 	router.GET("/api/categories", makeHandle(handlerGetCategories, self))
 	router.POST("/api/categories/:category_name", makeHandle(handlerPostCategories, self))
 	router.GET("/api/documents/:category_name", makeHandle(handlerGetDocuments, self))

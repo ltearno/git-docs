@@ -487,10 +487,10 @@ func getTagsDifference(old []string, new []string) ([]string, []string) {
 }
 
 type WorkflowElement struct {
-	Name       *string  `json:"name`
+	Name       *string  `json:"name"`
 	Condition  *string  `json:"condition"`
-	AddTags    []string `json:"addTags`
-	RemoveTags []string `json:"removeTags`
+	AddTags    []string `json:"addTags"`
+	RemoveTags []string `json:"removeTags"`
 }
 
 type WorkflowConfiguration map[string][]WorkflowElement
@@ -524,6 +524,16 @@ func chooseWorkflowElement(elements []WorkflowElement, actionName *string) *Work
 	return nil
 }
 
+func (repo *GitDocsRepository) GetWorkflow(category string) (*WorkflowConfiguration, interface{}) {
+	workflowConfiguration := &WorkflowConfiguration{}
+	err := readFileJson(repo.getConfigurationWorkflowPath(category), workflowConfiguration)
+	if err != nil {
+		return nil, "cannot read workflow"
+	}
+
+	return workflowConfiguration, nil
+}
+
 func (repo *GitDocsRepository) SetDocumentMetadata(category string, name string, metadata *DocumentMetadata, actionName *string) (bool, interface{}) {
 	if strings.Contains(name, "/") {
 		return false, "invalid name"
@@ -542,8 +552,10 @@ func (repo *GitDocsRepository) SetDocumentMetadata(category string, name string,
 
 	// process trigger
 	// TODO : should be recurrent, at the moment we don't trigger triggers for created and removed tags
-	workflowConfiguration := &WorkflowConfiguration{}
-	readFileJson(repo.getConfigurationWorkflowPath(category), workflowConfiguration)
+	workflowConfiguration, err := repo.GetWorkflow(category)
+	if err != nil {
+		return false, "cannot get workflow"
+	}
 	addedTags, removedTags := getTagsDifference(currentMetadata.GetTags(), metadata.GetTags())
 	for _, addedTag := range addedTags {
 		config, ok := (*workflowConfiguration)[fmt.Sprintf("when-added-%s", addedTag)]

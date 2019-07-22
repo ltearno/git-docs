@@ -216,7 +216,7 @@ function addDocument(category, name) {
 }
 
 function addTagToDocument(category, name, tagToAdd, actionName) {
-    getData(`/api/documents/${category}/${name}/metadata`)
+    return getData(`/api/documents/${category}/${name}/metadata`)
         .then(metadata => {
             let update = false
 
@@ -236,18 +236,22 @@ function addTagToDocument(category, name, tagToAdd, actionName) {
             }
 
             if (update) {
-                putData(`/api/documents/${category}/${name}/metadata?action_name=${encodeURIComponent(actionName)}`, metadata)
-                    .then(_ => {
-                        log(`update document metadata ${name}`)
-                        appStateSetDocument(name, false, true)
+                return getWorkflowPossibleActionNames(category, false, tagToAdd)
+                    .then(possibleActionNames => {
+                        log(`possible actions are ${JSON.stringify(possibleActionNames)}`)
+
+                        putData(`/api/documents/${category}/${name}/metadata?action_name=${encodeURIComponent(actionName)}`, metadata)
+                            .then(_ => {
+                                log(`update document metadata ${name}`)
+                                appStateSetDocument(name, false, true)
+                            })
+                            .catch(err => log(`updateDocument metadata ${name} failed`))
                     })
-                    .catch(err => log(`updateDocument metadata ${name} failed`))
             }
             else {
                 log(`tag already present`)
             }
         })
-        .catch(err => log(`get metadata for ${name} failed`))
 }
 
 function deleteTagToDocument(category, name, tagToRemove) {
@@ -259,18 +263,38 @@ function deleteTagToDocument(category, name, tagToRemove) {
             if (!metadata || !metadata.tags || !metadata.tags.includes(tagToRemove))
                 return
 
-            metadata.tags = metadata.tags.filter(tag => tag != tagToRemove)
+            getWorkflowPossibleActionNames(category, true, tagToRemove)
+                .then(possibleActionNames => {
+                    log(`possible actions are ${JSON.stringify(possibleActionNames)}`)
 
-            putData(`/api/documents/${category}/${name}/metadata?action_name=${encodeURIComponent(actionName)}`, metadata)
-                .then(_ => {
-                    log(`update document metadata ${name}`)
-                    appStateSetDocument(name, false, true)
+                    metadata.tags = metadata.tags.filter(tag => tag != tagToRemove)
+
+                    putData(`/api/documents/${category}/${name}/metadata?action_name=${encodeURIComponent(actionName)}`, metadata)
+                        .then(_ => {
+                            log(`update document metadata ${name}`)
+                            appStateSetDocument(name, false, true)
+                        })
                 })
         })
 }
 
+// si action (add/rem tag) a un workflow, et que ce workflow a plusieurs alternatives, on fait choisir une de ces alternatives
 
+function getWorkflowPossibleActionNames(category, removal, tag) {
+    return getData(`/api/workflows/${category}`)
+        .then(workflow => {
+            if (!workflow)
+                return []
 
+            let key = `when-${removal ? 'removed' : 'added'}-${tag}`
+            let elements = workflow[key]
+            if (!elements || !elements.length)
+                return []
+
+            let actionNames = elements.map(element => element.name || null)
+            return actionNames
+        })
+}
 
 
 
