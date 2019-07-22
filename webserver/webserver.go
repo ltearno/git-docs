@@ -379,7 +379,7 @@ func (self *WebServer) Init(router *httprouter.Router) {
 	router.DELETE("/api/documents/:category_name/:document_name", makeHandle(handlerDeleteDocument, self))
 }
 
-/* Run runs the Web server... */
+// Run runs a webserver hosting the GitDocs application
 func Run(repo *repository.GitDocsRepository) {
 	fmt.Println("starting web server")
 
