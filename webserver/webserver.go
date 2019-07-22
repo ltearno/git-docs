@@ -391,5 +391,7 @@ func Run(repo *repository.GitDocsRepository) {
 	server := NewWebServer(repo)
 	server.Init(router)
 
+	fmt.Println("\n you can use your internet browser to go here : http://127.0.0.1:8080/webui/index.html")
+
 	log.Fatal(http.ListenAndServe("127.0.0.1:8080", router))
 }
