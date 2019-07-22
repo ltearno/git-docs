@@ -487,15 +487,16 @@ func getTagsDifference(old []string, new []string) ([]string, []string) {
 }
 
 type WorkflowElement struct {
-	Condition  string   `json:"condition"`
+	Name       *string  `json:"name`
+	Condition  *string  `json:"condition"`
 	AddTags    []string `json:"addTags`
 	RemoveTags []string `json:"removeTags`
 }
 
-type WorkflowConfiguration map[string]WorkflowElement
+type WorkflowConfiguration map[string][]WorkflowElement
 
-func executeWorkflow(config WorkflowElement, currentMetadata *DocumentMetadata, metadata *DocumentMetadata) {
-	if tagsMatchSearch(currentMetadata.GetTags(), config.Condition) {
+func executeWorkflow(config *WorkflowElement, currentMetadata *DocumentMetadata, metadata *DocumentMetadata) {
+	if config.Condition == nil || tagsMatchSearch(currentMetadata.GetTags(), *config.Condition) {
 		for _, tagToAdd := range config.AddTags {
 			metadata.AddTag(tagToAdd)
 		}
@@ -505,7 +506,25 @@ func executeWorkflow(config WorkflowElement, currentMetadata *DocumentMetadata, 
 	}
 }
 
-func (repo *GitDocsRepository) SetDocumentMetadata(category string, name string, metadata *DocumentMetadata) (bool, interface{}) {
+func chooseWorkflowElement(elements []WorkflowElement, actionName *string) *WorkflowElement {
+	if elements == nil || len(elements) == 0 {
+		return nil
+	}
+
+	if actionName == nil || *actionName == "" {
+		return &elements[0]
+	}
+
+	for _, element := range elements {
+		if element.Name != nil && *element.Name == *actionName {
+			return &element
+		}
+	}
+
+	return nil
+}
+
+func (repo *GitDocsRepository) SetDocumentMetadata(category string, name string, metadata *DocumentMetadata, actionName *string) (bool, interface{}) {
 	if strings.Contains(name, "/") {
 		return false, "invalid name"
 	}
@@ -529,13 +548,19 @@ func (repo *GitDocsRepository) SetDocumentMetadata(category string, name string,
 	for _, addedTag := range addedTags {
 		config, ok := (*workflowConfiguration)[fmt.Sprintf("when-added-%s", addedTag)]
 		if ok {
-			executeWorkflow(config, currentMetadata, metadata)
+			workflowElement := chooseWorkflowElement(config, actionName)
+			if workflowElement != nil {
+				executeWorkflow(workflowElement, currentMetadata, metadata)
+			}
 		}
 	}
 	for _, removedTag := range removedTags {
 		config, ok := (*workflowConfiguration)[fmt.Sprintf("when-removed-%s", removedTag)]
 		if ok {
-			executeWorkflow(config, currentMetadata, metadata)
+			workflowElement := chooseWorkflowElement(config, actionName)
+			if workflowElement != nil {
+				executeWorkflow(workflowElement, currentMetadata, metadata)
+			}
 		}
 	}
 

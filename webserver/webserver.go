@@ -289,6 +289,7 @@ func handlerPostDocumentRename(w http.ResponseWriter, r *http.Request, p httprou
 func handlerPutDocumentMetadata(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
 	category := p.ByName("category_name")
 	name := p.ByName("document_name")
+	actionName := r.URL.Query().Get("action_name")
 
 	out, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -300,7 +301,7 @@ func handlerPutDocumentMetadata(w http.ResponseWriter, r *http.Request, p httpro
 		if err != nil {
 			errorResponse(w, 400, "error malformatted json")
 		} else {
-			ok, err := server.repo.SetDocumentMetadata(category, name, metadata)
+			ok, err := server.repo.SetDocumentMetadata(category, name, metadata, &actionName)
 			if err != nil || !ok {
 				errorResponse(w, 400, "error setting metadata")
 			} else {

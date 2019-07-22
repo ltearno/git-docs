@@ -215,7 +215,7 @@ function addDocument(category, name) {
         .catch(err => log(`addDocument ${name} failed`))
 }
 
-function addTagToDocument(category, name, tagToAdd) {
+function addTagToDocument(category, name, tagToAdd, actionName) {
     getData(`/api/documents/${category}/${name}/metadata`)
         .then(metadata => {
             let update = false
@@ -236,7 +236,7 @@ function addTagToDocument(category, name, tagToAdd) {
             }
 
             if (update) {
-                putData(`/api/documents/${category}/${name}/metadata`, metadata)
+                putData(`/api/documents/${category}/${name}/metadata?action_name=${encodeURIComponent(actionName)}`, metadata)
                     .then(_ => {
                         log(`update document metadata ${name}`)
                         appStateSetDocument(name, false, true)
@@ -251,6 +251,9 @@ function addTagToDocument(category, name, tagToAdd) {
 }
 
 function deleteTagToDocument(category, name, tagToRemove) {
+    // highly hacky, just to test ;)
+    let actionName = document.querySelector('#document-add-tag-action-name').value
+
     getData(`/api/documents/${category}/${name}/metadata`)
         .then(metadata => {
             if (!metadata || !metadata.tags || !metadata.tags.includes(tagToRemove))
@@ -258,7 +261,7 @@ function deleteTagToDocument(category, name, tagToRemove) {
 
             metadata.tags = metadata.tags.filter(tag => tag != tagToRemove)
 
-            putData(`/api/documents/${category}/${name}/metadata`, metadata)
+            putData(`/api/documents/${category}/${name}/metadata?action_name=${encodeURIComponent(actionName)}`, metadata)
                 .then(_ => {
                     log(`update document metadata ${name}`)
                     appStateSetDocument(name, false, true)
@@ -348,7 +351,7 @@ function drawDocument(category, name) {
     documentElement.innerHTML += `<div class='mui--text-dark-secondary mui--text-caption' style='padding-top:1em;padding-bottom:1.7em;'>${name}</div>`
     const metadataElement = document.createElement('div')
     documentElement.appendChild(metadataElement)
-    documentElement.appendChild(elFromHtml(`<form id='document-add-tag-form'>Tags: <label><input id='document-add-tag-text'/></label><button role='submit' class='mui-btn mui-btn--primary mui-btn--flat'>add tag</button></form>`))
+    documentElement.appendChild(elFromHtml(`<form id='document-add-tag-form'>Tags: <label><input id='document-add-tag-text'/></label>, action name: <label><input id='document-add-tag-action-name'/></label><button role='submit' class='mui-btn mui-btn--primary mui-btn--flat'>add tag</button></form>`))
     documentElement.appendChild(elFromHtml('<div class="mui-divider"></div>'))
     const contentElement = document.createElement('div')
     documentElement.appendChild(contentElement)
@@ -361,8 +364,9 @@ function drawDocument(category, name) {
         event.stopPropagation()
 
         let tag = documentElement.querySelector('#document-add-tag-text').value
+        let actionName = documentElement.querySelector('#document-add-tag-action-name').value
 
-        addTagToDocument(category, name, tag)
+        addTagToDocument(category, name, tag, actionName)
     })
 
     const asyncCount = runAtLast => {
