@@ -3,21 +3,16 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
 	"path"
+	"path/filepath"
 
 	"git-docs/repository"
 	"git-docs/tools"
 	"git-docs/webserver"
 )
 
-func detectGitRootdirectory() *string {
-	dir, err := os.Getwd()
-	if err != nil {
-		return nil
-	}
-
-	for cur := dir; cur != ""; {
+func detectGitRootdirectory(dir string) *string {
+	for cur := dir; cur != "/"; {
 		maybeGitDir := path.Join(cur, ".git")
 		if tools.ExistsFile(maybeGitDir) {
 			return &cur
@@ -52,36 +47,49 @@ func main() {
 		printUsage = true
 	}
 
-	gitRepositoryDir := detectGitRootdirectory()
-	if gitRepositoryDir == nil {
-		fmt.Println("not in a git repository !")
-		printUsage = true
+	printHelp := func() {
+		fmt.Printf("\ngit-docs usage :\n\n  git-docs [OPTIONS] verbs...\n\nOPTIONS :\n\n")
+		flag.PrintDefaults()
 	}
 
 	if printUsage {
-		fmt.Printf("\ngit-docs usage :\n\n  git-docs [OPTIONS] verbs...\n\nOPTIONS :\n\n")
-		flag.PrintDefaults()
+		printHelp()
 		return
 	}
-
-	fmt.Printf(" working in %s\n", *gitRepositoryDir)
-	fmt.Println()
-
-	repo := repository.NewGitDocsRepository(gitRepositoryDir, path.Join(*gitRepositoryDir, ".git-docs"))
 
 	// execute the verb
 	switch verbs[0] {
 	case "serve":
+		// get current working directory or verbs[1] if present, that is the gitDocs working dir
+		// from that working dir, detect a Git repository and use it if needed
+		relativeWorkdir := ".git-docs"
+		if len(verbs) > 1 {
+			relativeWorkdir = verbs[1]
+		}
+
+		workingDir, err := filepath.Abs(relativeWorkdir)
+		if err != nil {
+			fmt.Printf("cannot find working directory, abort (%v)\n", err)
+			return
+		}
+
+		fmt.Printf("content directory: %s\n", workingDir)
+
+		gitRepositoryDir := detectGitRootdirectory(workingDir)
+		if gitRepositoryDir == nil {
+			fmt.Println("not working with git repository")
+		} else {
+			fmt.Printf("working with git repository: %s\n", *gitRepositoryDir)
+		}
+
+		fmt.Println()
+
+		repo := repository.NewGitDocsRepository(gitRepositoryDir, workingDir)
 		webserver.Run(repo)
 		break
 
-	case "document":
-		fmt.Println("documents management")
-		break
-
-	case "documents":
-		fmt.Println("documents management")
-		break
+	default:
+		printHelp()
 	}
 
 	// parse command line for those actions :

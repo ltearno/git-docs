@@ -69,6 +69,10 @@ func (repo *GitDocsRepository) GitRepositoryDir() *string {
 	return repo.gitRepositoryDir
 }
 
+func (repo *GitDocsRepository) GetWorkingDir() string {
+	return repo.workingDir
+}
+
 func (repo *GitDocsRepository) GetDocuments(category string) ([]string, interface{}) {
 	files, err := ioutil.ReadDir(repo.getDocumentsPath(category))
 	if err != nil {

@@ -205,7 +205,6 @@ function deleteDocument(category, name) {
             log(`deleted document ${name}`)
             appStateSetDocument(null, false, true)
         })
-        .catch(err => log(`deleteDocument ${name} failed`))
 }
 
 function addDocument(category, name) {
@@ -214,7 +213,6 @@ function addDocument(category, name) {
             log(`add document ${name}`)
             appStateSetDocument(name, false, true)
         })
-        .catch(err => log(`addDocument ${name} failed`))
 }
 
 function addTagToDocument(category, name, tagToAdd) {
@@ -245,7 +243,6 @@ function addTagToDocument(category, name, tagToAdd) {
                                 log(`update document metadata ${name}`)
                                 appStateSetDocument(name, false, true)
                             })
-                            .catch(err => log(`updateDocument metadata ${name} failed`))
                     })
                     .catch(() => {
                         log(`cancelled tag add`)
@@ -371,7 +368,6 @@ function drawDocumentEdition(category, name) {
 
     getData(`/api/documents/${category}/${name}/content`, 'application/mardown')
         .then(content => contentElement.innerHTML += `<textarea class='document-content-textarea' style='width:80em;height:30em;'>${content}</textarea>`)
-        .catch(err => log(`get content for ${name} failed`))
 
     let validateButton = documentElement.getElementsByClassName('validate-edit').item(0)
     validateButton.addEventListener('click', () => {
@@ -390,7 +386,6 @@ function drawDocumentEdition(category, name) {
                     log(`renamed document ${name}`)
                     maybeReload(newName)
                 })
-                .catch(err => log(`rename ${name} failed`))
         }
 
         const newContent = documentElement.getElementsByClassName('document-content-textarea').item(0).value
@@ -401,7 +396,6 @@ function drawDocumentEdition(category, name) {
                     log(`updated document ${name} content`)
                     maybeReload(newName)
                 })
-                .catch(err => log(`editDocument ${name} failed`))
         }
         else {
             log(`no change to content`)
@@ -538,16 +532,11 @@ function loadDocuments(category, search, split) {
                                 columnDocumentsElement.children.item(loadedDocumentTags).querySelector('[x-id=tags]').innerHTML = metadata.tags.map(tagToHtmlBadge).join('')
                             maybeLoad()
                         })
-                        .catch(err => {
-                            log(`get metadata for ${name} failed`)
-                            maybeLoad()
-                        })
                 }
 
                 maybeLoad()
 
             })
-            .catch(err => log(`loadDocuments failed`))
     }
 }
 
@@ -556,7 +545,6 @@ function loadTags(category) {
         .then(tags => {
             el('tagsList').innerHTML = "All tags : " + tags.map(tagToHtmlBadge).join('')
         })
-        .catch(err => log(`loadTags failed`))
 }
 
 function loadStatus() {
@@ -567,10 +555,13 @@ function loadStatus() {
                 return
             }
 
-            el('board-status').innerHTML = `repository: ${status.gitRepository}<br/>`
-            el('board-status').innerHTML += `<span style='color:${status.clean ? 'green' : 'red'};'>${status.clean ? 'ready for operations !' : 'working directory files not synced, commit your changes please'}</span>`
+            let html = ''
+            html += `working directory: ${status.workingDirectory}<br/>`
+            html += `git repository: ${status.gitRepository ? status.gitRepository : '-'}<br/>`
+            html += `<span style='color:${status.clean ? 'green' : 'red'};'>${status.clean ? 'ready for operations !' : 'working directory files not synced, commit your changes please'}</span>`
             if (!status.clean)
-                el('board-status').innerHTML += `<pre>${status.text}</pre>`
+                html += `<pre>${status.text}</pre>`
+            el('board-status').innerHTML = html
         })
 }
 

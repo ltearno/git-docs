@@ -125,9 +125,10 @@ func httpResponse(w http.ResponseWriter, code int, body string) {
 }
 
 type StatusResponse struct {
-	Clean         bool   `json:"clean"`
-	Text          string `json:"text"`
-	GitRepository string `json:"gitRepository"`
+	Clean            bool    `json:"clean"`
+	Text             string  `json:"text"`
+	WorkingDirectory string  `json:"workingDirectory"`
+	GitRepository    *string `json:"gitRepository"`
 }
 
 func handlerStatusRestAPI(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
@@ -142,9 +143,10 @@ func handlerStatusRestAPI(w http.ResponseWriter, r *http.Request, p httprouter.P
 	}
 
 	response := StatusResponse{
-		Clean:         clean,
-		Text:          *status,
-		GitRepository: *server.repo.GitRepositoryDir(),
+		Clean:            clean,
+		Text:             *status,
+		WorkingDirectory: server.repo.GetWorkingDir(),
+		GitRepository:    server.repo.GitRepositoryDir(),
 	}
 
 	jsonResponse(w, 200, response)
