@@ -365,20 +365,20 @@ func makeHandle(handle func(http.ResponseWriter, *http.Request, httprouter.Param
 }
 
 func (self *WebServer) Init(router *httprouter.Router) {
-	router.GET("/webui/*requested_resource", makeHandle(handlerWebUi, self))
-	router.GET("/api/status", makeHandle(handlerStatusRestAPI, self))
-	router.GET("/api/tags/:category_name", makeHandle(handlerTagsRestAPI, self))
-	router.GET("/api/workflows/:category_name", makeHandle(handlerGetWorkflow, self))
-	router.GET("/api/categories", makeHandle(handlerGetCategories, self))
-	router.POST("/api/categories/:category_name", makeHandle(handlerPostCategories, self))
-	router.GET("/api/documents/:category_name", makeHandle(handlerGetDocuments, self))
-	router.GET("/api/documents/:category_name/:document_name/metadata", makeHandle(handlerGetDocumentMetadata, self))
-	router.GET("/api/documents/:category_name/:document_name/content", makeHandle(handlerGetDocumentContent, self))
-	router.POST("/api/documents/:category_name/:document_name", makeHandle(handlerPostDocument, self))
-	router.POST("/api/documents/:category_name/:document_name/rename", makeHandle(handlerPostDocumentRename, self))
-	router.PUT("/api/documents/:category_name/:document_name/metadata", makeHandle(handlerPutDocumentMetadata, self))
-	router.PUT("/api/documents/:category_name/:document_name/content", makeHandle(handlerPutDocumentContent, self))
-	router.DELETE("/api/documents/:category_name/:document_name", makeHandle(handlerDeleteDocument, self))
+	router.GET("/git-docs/webui/*requested_resource", makeHandle(handlerWebUi, self))
+	router.GET("/git-docs/api/status", makeHandle(handlerStatusRestAPI, self))
+	router.GET("/git-docs/api/tags/:category_name", makeHandle(handlerTagsRestAPI, self))
+	router.GET("/git-docs/api/workflows/:category_name", makeHandle(handlerGetWorkflow, self))
+	router.GET("/git-docs/api/categories", makeHandle(handlerGetCategories, self))
+	router.POST("/git-docs/api/categories/:category_name", makeHandle(handlerPostCategories, self))
+	router.GET("/git-docs/api/documents/:category_name", makeHandle(handlerGetDocuments, self))
+	router.GET("/git-docs/api/documents/:category_name/:document_name/metadata", makeHandle(handlerGetDocumentMetadata, self))
+	router.GET("/git-docs/api/documents/:category_name/:document_name/content", makeHandle(handlerGetDocumentContent, self))
+	router.POST("/git-docs/api/documents/:category_name/:document_name", makeHandle(handlerPostDocument, self))
+	router.POST("/git-docs/api/documents/:category_name/:document_name/rename", makeHandle(handlerPostDocumentRename, self))
+	router.PUT("/git-docs/api/documents/:category_name/:document_name/metadata", makeHandle(handlerPutDocumentMetadata, self))
+	router.PUT("/git-docs/api/documents/:category_name/:document_name/content", makeHandle(handlerPutDocumentContent, self))
+	router.DELETE("/git-docs/api/documents/:category_name/:document_name", makeHandle(handlerDeleteDocument, self))
 }
 
 // Run runs a webserver hosting the GitDocs application
@@ -393,7 +393,7 @@ func Run(repo *repository.GitDocsRepository, port int) {
 	server := NewWebServer(repo)
 	server.Init(router)
 
-	fmt.Printf("\n you can use your internet browser to go here : http://127.0.0.1:%d/webui/index.html\n", port)
+	fmt.Printf("\n you can use your internet browser to go here : http://127.0.0.1:%d/git-docs/webui/index.html\n", port)
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), router))
 }

@@ -196,11 +196,11 @@ function drawDocumentDetail() {
 
 
 function fetchCategories() {
-    return getData(`/api/categories`)
+    return getData(`/git-docs/api/categories`)
 }
 
 function deleteDocument(category, name) {
-    deleteData(`/api/documents/${category}/${name}`)
+    deleteData(`/git-docs/api/documents/${category}/${name}`)
         .then(_ => {
             log(`deleted document ${name}`)
             appStateSetDocument(null, false, true)
@@ -208,7 +208,7 @@ function deleteDocument(category, name) {
 }
 
 function addDocument(category, name) {
-    postData(`/api/documents/${category}/${name}`, {})
+    postData(`/git-docs/api/documents/${category}/${name}`, {})
         .then(_ => {
             log(`add document ${name}`)
             appStateSetDocument(name, false, true)
@@ -216,7 +216,7 @@ function addDocument(category, name) {
 }
 
 function addTagToDocument(category, name, tagToAdd) {
-    return getData(`/api/documents/${category}/${name}/metadata`)
+    return getData(`/git-docs/api/documents/${category}/${name}/metadata`)
         .then(metadata => {
             let update = false
 
@@ -238,7 +238,7 @@ function addTagToDocument(category, name, tagToAdd) {
             if (update) {
                 return chooseWorkflowAction(category, false, tagToAdd)
                     .then(actionName => {
-                        putData(`/api/documents/${category}/${name}/metadata?action_name=${encodeURIComponent(actionName || '')}`, metadata)
+                        putData(`/git-docs/api/documents/${category}/${name}/metadata?action_name=${encodeURIComponent(actionName || '')}`, metadata)
                             .then(_ => {
                                 log(`update document metadata ${name}`)
                                 appStateSetDocument(name, false, true)
@@ -255,7 +255,7 @@ function addTagToDocument(category, name, tagToAdd) {
 }
 
 function deleteTagToDocument(category, name, tagToRemove) {
-    getData(`/api/documents/${category}/${name}/metadata`)
+    getData(`/git-docs/api/documents/${category}/${name}/metadata`)
         .then(metadata => {
             if (!metadata || !metadata.tags || !metadata.tags.includes(tagToRemove))
                 return
@@ -267,7 +267,7 @@ function deleteTagToDocument(category, name, tagToRemove) {
 
                     metadata.tags = metadata.tags.filter(tag => tag != tagToRemove)
 
-                    putData(`/api/documents/${category}/${name}/metadata?action_name=${encodeURIComponent(actionName || '')}`, metadata)
+                    putData(`/git-docs/api/documents/${category}/${name}/metadata?action_name=${encodeURIComponent(actionName || '')}`, metadata)
                         .then(_ => {
                             log(`update document metadata ${name}`)
                             appStateSetDocument(name, false, true)
@@ -282,7 +282,7 @@ function deleteTagToDocument(category, name, tagToRemove) {
 // si action (add/rem tag) a un workflow, et que ce workflow a plusieurs alternatives, on fait choisir une de ces alternatives
 
 function getWorkflowPossibleActions(category, removal, tag) {
-    return getData(`/api/workflows/${category}`)
+    return getData(`/git-docs/api/workflows/${category}`)
         .then(workflow => {
             if (!workflow)
                 return []
@@ -366,7 +366,7 @@ function drawDocumentEdition(category, name) {
 
     documentElement.querySelector('#name-input').value = name
 
-    getData(`/api/documents/${category}/${name}/content`, 'application/mardown')
+    getData(`/git-docs/api/documents/${category}/${name}/content`, 'application/mardown')
         .then(content => contentElement.innerHTML += `<textarea class='document-content-textarea' style='width:80em;height:30em;'>${content}</textarea>`)
 
     let validateButton = documentElement.getElementsByClassName('validate-edit').item(0)
@@ -381,7 +381,7 @@ function drawDocumentEdition(category, name) {
         const newName = documentElement.querySelector('#name-input').value
         if (newName != name) {
             waitCount++
-            postData(`/api/documents/${category}/${name}/rename`, { name: newName })
+            postData(`/git-docs/api/documents/${category}/${name}/rename`, { name: newName })
                 .then(_ => {
                     log(`renamed document ${name}`)
                     maybeReload(newName)
@@ -391,7 +391,7 @@ function drawDocumentEdition(category, name) {
         const newContent = documentElement.getElementsByClassName('document-content-textarea').item(0).value
         if (newContent) {
             waitCount++
-            putData(`/api/documents/${category}/${name}/content`, newContent, 'application/markdown')
+            putData(`/git-docs/api/documents/${category}/${name}/content`, newContent, 'application/markdown')
                 .then(_ => {
                     log(`updated document ${name} content`)
                     maybeReload(newName)
@@ -454,7 +454,7 @@ function drawDocument(category, name) {
 
     count.add()
     count.add()
-    getData(`/api/documents/${category}/${name}/metadata`)
+    getData(`/git-docs/api/documents/${category}/${name}/metadata`)
         .then(metadata => {
             if (metadata && metadata.tags) {
                 metadataElement.innerHTML += metadata.tags.map(tag => `<div class="badge ${badgeColorClass(tag)}" >${tag}&nbsp;<span onclick='deleteTagToDocument("${category}","${name}","${tag}")'>[X]</span></div>`).join('')
@@ -467,7 +467,7 @@ function drawDocument(category, name) {
         })
 
     count.add()
-    getData(`/api/documents/${category}/${name}/content?interpolated=true`, 'application/markdown')
+    getData(`/git-docs/api/documents/${category}/${name}/content?interpolated=true`, 'application/markdown')
         .then(content => {
             contentElement.innerHTML += marked(content)
 
@@ -509,7 +509,7 @@ function loadDocuments(category, search, split) {
         let columnElement = elFromHtml(`<div style='${documentIndex > 0 ? 'margin-left:1em;' : ''}'><div style='text-align: center;font-weight: bold;padding-bottom: .5em'>${q || 'All'}</div></div>`)
         columnsElement.appendChild(columnElement)
 
-        getData(q ? `/api/documents/${category}/?q=${encodeURIComponent(q)}` : `/api/documents/${category}`)
+        getData(q ? `/git-docs/api/documents/${category}/?q=${encodeURIComponent(q)}` : `/git-docs/api/documents/${category}`)
             .then(documents => {
                 let prep = documents.map(name => `<div><span style='cursor: pointer;' onclick='appStateSetDocument("${name}", false, false)'>${name}</span>&nbsp;<span x-id='tags'></span></div>`).join('')
 
@@ -526,7 +526,7 @@ function loadDocuments(category, search, split) {
                     let loadedDocumentTags = documentToFetchTags++
                     let name = documents[loadedDocumentTags]
 
-                    getData(`/api/documents/${category}/${name}/metadata`)
+                    getData(`/git-docs/api/documents/${category}/${name}/metadata`)
                         .then(metadata => {
                             if (metadata && metadata.tags)
                                 columnDocumentsElement.children.item(loadedDocumentTags).querySelector('[x-id=tags]').innerHTML = metadata.tags.map(tagToHtmlBadge).join('')
@@ -541,14 +541,14 @@ function loadDocuments(category, search, split) {
 }
 
 function loadTags(category) {
-    getData(`/api/tags/${category}`)
+    getData(`/git-docs/api/tags/${category}`)
         .then(tags => {
             el('tagsList').innerHTML = "All tags : " + tags.map(tagToHtmlBadge).join('')
         })
 }
 
 function loadStatus() {
-    getData("/api/status")
+    getData("/git-docs/api/status")
         .then(status => {
             if (!status) {
                 log(`loadStatus failed`)
@@ -666,7 +666,7 @@ function installUi() {
 
         let name = el('new-category-name').value
         el('new-category-name').value = null
-        postData(`/api/categories/${name}`).then(() => {
+        postData(`/git-docs/api/categories/${name}`).then(() => {
             appStateSetCategory(name, true)
         })
     })
