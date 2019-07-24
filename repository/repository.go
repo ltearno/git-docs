@@ -367,6 +367,12 @@ func (repo *GitDocsRepository) AddCategory(category string) (bool, interface{}) 
 		return false, "error write file"
 	}
 
+	if repo.gitRepositoryDir != nil {
+		if !repo.isGitRepositoryClean() {
+			return false, "repository is dirty"
+		}
+	}
+
 	configuration := repo.GetConfiguration()
 	if contains(configuration.Categories, category) {
 		return true, nil
@@ -392,6 +398,13 @@ func (repo *GitDocsRepository) AddCategory(category string) (bool, interface{}) 
 	ok = ok && copyAsset("assets/models/model.json", repo.getConfigurationTemplateMetadataPath(category))
 	ok = ok && copyAsset("assets/models/workflow.json", repo.getConfigurationWorkflowPath(category))
 	ok = ok && copyAsset("assets/models/tags.json", repo.getConfigurationTagsPath(category))
+
+	if repo.gitRepositoryDir != nil {
+		ok = commitChanges(repo.gitRepositoryDir, fmt.Sprintf("documents() - added category %s", category), repo.workingDir)
+		if !ok {
+			return false, "commit error"
+		}
+	}
 
 	return ok, nil
 }
