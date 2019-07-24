@@ -21,6 +21,31 @@ type GitDocsRepository struct {
 
 type DocumentMetadata map[string]interface{}
 
+type GitDocsConfiguration struct {
+	Categories []string `json:"categories"`
+}
+
+type WorkflowElement struct {
+	Name        *string  `json:"name"`
+	Description *string  `json:"description"`
+	Condition   *string  `json:"condition"`
+	AddTags     []string `json:"addTags"`
+	RemoveTags  []string `json:"removeTags"`
+}
+
+type WorkflowConfiguration map[string][]WorkflowElement
+
+func executeWorkflow(config *WorkflowElement, currentMetadata *DocumentMetadata, metadata *DocumentMetadata) {
+	if config.Condition == nil || tagsMatchSearch(currentMetadata.GetTags(), *config.Condition) {
+		for _, tagToAdd := range config.AddTags {
+			metadata.AddTag(tagToAdd)
+		}
+		for _, tagToRemove := range config.RemoveTags {
+			metadata.RemoveTag(tagToRemove)
+		}
+	}
+}
+
 func (metadata *DocumentMetadata) GetTags() []string {
 	result := []string{}
 	for _, tag := range (*metadata)["tags"].([]interface{}) {
@@ -243,10 +268,6 @@ func (repo *GitDocsRepository) SearchDocuments(category string, q string) ([]str
 
 func (repo *GitDocsRepository) getGitDocsConfigurationFilePath() string {
 	return path.Join(repo.workingDir, "git-docs.json")
-}
-
-type GitDocsConfiguration struct {
-	Categories []string `json:"categories"`
 }
 
 func (repo *GitDocsRepository) GetConfiguration() GitDocsConfiguration {
@@ -512,27 +533,6 @@ func getTagsDifference(old []string, new []string) ([]string, []string) {
 	}
 
 	return listNew, listOld
-}
-
-type WorkflowElement struct {
-	Name        *string  `json:"name"`
-	Description *string  `json:"description"`
-	Condition   *string  `json:"condition"`
-	AddTags     []string `json:"addTags"`
-	RemoveTags  []string `json:"removeTags"`
-}
-
-type WorkflowConfiguration map[string][]WorkflowElement
-
-func executeWorkflow(config *WorkflowElement, currentMetadata *DocumentMetadata, metadata *DocumentMetadata) {
-	if config.Condition == nil || tagsMatchSearch(currentMetadata.GetTags(), *config.Condition) {
-		for _, tagToAdd := range config.AddTags {
-			metadata.AddTag(tagToAdd)
-		}
-		for _, tagToRemove := range config.RemoveTags {
-			metadata.RemoveTag(tagToRemove)
-		}
-	}
 }
 
 func chooseWorkflowElement(elements []WorkflowElement, actionName *string) *WorkflowElement {
