@@ -241,17 +241,28 @@ func (repo *GitDocsRepository) SearchDocuments(category string, q string) ([]str
 	return result, nil
 }
 
-func (repo *GitDocsRepository) getCategoriesFilePath() string {
-	return path.Join(repo.workingDir, "categories.json")
+func (repo *GitDocsRepository) getGitDocsConfigurationFilePath() string {
+	return path.Join(repo.workingDir, "git-docs.json")
+}
+
+type GitDocsConfiguration struct {
+	Categories []string `json:"categories"`
+}
+
+func (repo *GitDocsRepository) GetConfiguration() GitDocsConfiguration {
+	config := &GitDocsConfiguration{}
+	err := readFileJson(repo.getGitDocsConfigurationFilePath(), config)
+	if err != nil {
+		config.Categories = []string{}
+	}
+
+	return *config
 }
 
 func (repo *GitDocsRepository) GetCategories() []string {
-	categories := []string{}
+	configuration := repo.GetConfiguration()
 
-	filePath := repo.getCategoriesFilePath()
-	readFileJson(filePath, &categories)
-
-	return categories
+	return configuration.Categories
 }
 
 func contains(s []string, e string) bool {
@@ -325,19 +336,23 @@ func copyAsset(assetPath string, targetPath string) bool {
 	return true
 }
 
+func (repo *GitDocsRepository) SetConfiguration(configuration *GitDocsConfiguration) bool {
+	return writeFileJson(repo.getGitDocsConfigurationFilePath(), configuration)
+}
+
 func (repo *GitDocsRepository) AddCategory(category string) (bool, interface{}) {
 	ok := repo.ensureWorkdirReady()
 	if !ok {
 		return false, "error write file"
 	}
 
-	categories := repo.GetCategories()
-	if contains(categories, category) {
+	configuration := repo.GetConfiguration()
+	if contains(configuration.Categories, category) {
 		return true, nil
 	}
 
-	categories = append(categories, category)
-	ok = writeFileJson(repo.getCategoriesFilePath(), categories)
+	configuration.Categories = append(configuration.Categories, category)
+	ok = repo.SetConfiguration(&configuration)
 	if !ok {
 		return false, "error write file"
 	}
