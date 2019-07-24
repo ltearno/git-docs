@@ -47,6 +47,8 @@ func main() {
 	printHelp := func() {
 		fmt.Printf("\ngit-docs usage :\n\n  git-docs [OPTIONS] verbs...\n\nOPTIONS :\n\n")
 		flag.PrintDefaults()
+		fmt.Printf("\nVERBS :\n\n  serve\n        serves the Web UI\n")
+		fmt.Printf("\nEXAMPLES :\n\n  git-docs serve\n  git-docs serve .\n  git-docs serve ~/repos/my-git-repo\n")
 	}
 
 	if printUsage {
