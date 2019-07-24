@@ -42,17 +42,31 @@ Then in a browser go to `http://127.0.0.1:8080/git-docs/webui/index.html`
 
 ## Features
 
+[to be redacted]
+
 ### Categories
+
+[to be redacted]
 
 ### Documents
 
+[to be redacted]
+
 #### Tags
+
+[to be redacted]
 
 #### Workflows
 
+[to be redacted]
+
 ### Git management
 
+[to be redacted]
+
 ### Files layout
+
+[to be redacted]
 
 ## To do list
 
