@@ -382,7 +382,7 @@ func (self *WebServer) Init(router *httprouter.Router) {
 }
 
 // Run runs a webserver hosting the GitDocs application
-func Run(repo *repository.GitDocsRepository) {
+func Run(repo *repository.GitDocsRepository, port int) {
 	fmt.Println("starting web server")
 
 	router := httprouter.New()
@@ -393,7 +393,7 @@ func Run(repo *repository.GitDocsRepository) {
 	server := NewWebServer(repo)
 	server.Init(router)
 
-	fmt.Println("\n you can use your internet browser to go here : http://127.0.0.1:8080/webui/index.html")
+	fmt.Printf("\n you can use your internet browser to go here : http://127.0.0.1:%d/webui/index.html\n", port)
 
-	log.Fatal(http.ListenAndServe("127.0.0.1:8080", router))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), router))
 }

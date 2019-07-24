@@ -29,6 +29,7 @@ func main() {
 
 	var printUsage = false
 	var help = flag.Bool("help", false, "show this help")
+	var port = flag.Int("port", 8080, "webserver listening port")
 
 	flag.Parse()
 
@@ -38,12 +39,8 @@ func main() {
 
 	verbs := flag.Args()
 
-	//for i, verb := range verbs {
-	//	fmt.Printf("%d %s/", i, verb)
-	//}
-
 	if len(verbs) == 0 {
-		fmt.Println("not enough parameters, sue '-help' !")
+		fmt.Println("not enough parameters, use '-help' !")
 		printUsage = true
 	}
 
@@ -60,8 +57,6 @@ func main() {
 	// execute the verb
 	switch verbs[0] {
 	case "serve":
-		// get current working directory or verbs[1] if present, that is the gitDocs working dir
-		// from that working dir, detect a Git repository and use it if needed
 		relativeWorkdir := ".git-docs"
 		if len(verbs) > 1 {
 			relativeWorkdir = verbs[1]
@@ -85,7 +80,7 @@ func main() {
 		fmt.Println()
 
 		repo := repository.NewGitDocsRepository(gitRepositoryDir, workingDir)
-		webserver.Run(repo)
+		webserver.Run(repo, *port)
 		break
 
 	default:
