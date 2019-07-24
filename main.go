@@ -80,7 +80,7 @@ func main() {
 		fmt.Println()
 
 		repo := repository.NewGitDocsRepository(gitRepositoryDir, workingDir)
-		webserver.Run(repo, *port)
+		webserver.Start(repo, *port)
 		break
 
 	default:
