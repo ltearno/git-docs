@@ -40,7 +40,7 @@ Go inside a git repository and launch this to start serving the UI :
 
 Then in a browser go to `http://127.0.0.1:8080/git-docs/webui/index.html`
 
-## Features
+## Concepts
 
 [to be redacted]
 
