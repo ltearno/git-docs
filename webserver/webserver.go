@@ -18,6 +18,7 @@ func (server *WebServer) makeHandler(handler func(http.ResponseWriter, *http.Req
 }
 
 func (server *WebServer) init(router *httprouter.Router) {
+	router.GET("/", server.makeHandler(handlerRedirectHome))
 	router.GET("/git-docs/webui/*requested_resource", server.makeHandler(handlerGetWebUI))
 	router.GET("/git-docs/api/status", server.makeHandler(handlerGetStatus))
 	router.GET("/git-docs/api/tags/:category_name", server.makeHandler(handlerTagsRestAPI))

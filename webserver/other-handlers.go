@@ -9,6 +9,12 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+func handlerRedirectHome(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
+	w.Header().Set("Location", "/git-docs/webui/index.html")
+	w.WriteHeader(301)
+	w.Write([]byte(""))
+}
+
 func handlerGetWebUI(w http.ResponseWriter, r *http.Request, p httprouter.Params, server *WebServer) {
 	relativePath := p.ByName("requested_resource")
 	if strings.HasPrefix(relativePath, "/") {
