@@ -201,3 +201,4 @@ For instance here is the description of a workflow :
 - multi repositories
 - demo how to use user's context data (like secrets, apikeys...) to interact with third party services (Rocket Chat, Emails, CIs...)
 - plugins
+- tag colors
