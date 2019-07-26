@@ -185,6 +185,10 @@ For instance here is the description of a workflow :
 
 [to be redacted]
 
+### REST API
+
+[to be redacted]
+
 ## To do list
 
 - Notifications : when things happen concerning the git user, send email !
