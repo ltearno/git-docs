@@ -6,9 +6,9 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/ltearno/git-docs/repository"
-	"github.com/ltearno/git-docs/tools"
-	"github.com/ltearno/git-docs/webserver"
+	"git-docs/repository"
+	"git-docs/tools"
+	"git-docs/webserver"
 )
 
 func detectGitRootdirectory(dir string) *string {
