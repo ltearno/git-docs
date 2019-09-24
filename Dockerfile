@@ -12,6 +12,6 @@ ADD assets ./assets/
 
 RUN make build-prepare
 RUN make build-embed-assets
-RUN make build
+RUN make install
 
 ENTRYPOINT [ "/go/mgit" ]

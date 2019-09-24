@@ -1,4 +1,4 @@
-all: build
+all: install
 
 .PHONY: build-prepare
 build-prepare:
@@ -9,8 +9,8 @@ build-prepare:
 build-embed-assets:
 	go-bindata -o assetsgen/assets.go -pkg assetsgen assets/...
 
-.PHONY: build
-build: build-embed-assets
+.PHONY: install
+install: build-embed-assets
 	go install git-docs
 
 .PHONY: run-serve
