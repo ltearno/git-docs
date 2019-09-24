@@ -7,6 +7,6 @@ do
     EXTENSION=$(echo $spec | cut -d ' ' -f 3)
     PACKAGE="${GOOS}-${GOARCH}"
     echo ${PACKAGE}
-    mkdir -p targets/${PACKAGE}
-    go build -o "targets/${PACKAGE}/git-docs${EXTENSION}"
+    mkdir -p git-docs-releases/${PACKAGE}
+    go build -o "git-docs-releases/${PACKAGE}/git-docs${EXTENSION}"
 done

@@ -32,6 +32,29 @@ This will generate embedded assets and compile the project.
 
 An executable `git-docs` will be generated and installed in the `$GOPATH/bin` directory.
 
+## Install
+
+Precompiled releases for OS X, Windows and Linux are available as a `tar.gz` file. Here are the instructions to install from the precompiled binaries.
+
+### On Linux
+
+Run that :
+
+    # fetch the release archive
+    wget https://github.com/ltearno/git-docs/releases/download/v0.1/git-docs-releases.tag.gz
+    # extract the archive
+    tar xvzf git-docs-releases.tag.gz
+    # add the binary to the PATH
+    export PATH=$PATH:$(pwd)/git-docs-releases/linux-amd64
+
+You can then run it :
+
+    git-docs
+
+### On other platform
+
+TO BE DONE (MacOS and Windows releases exists but are not yet documented)
+
 ## How to use ?
 
 Go inside a git repository and launch this to start serving the UI :
