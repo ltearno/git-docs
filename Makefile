@@ -9,6 +9,10 @@ build-prepare:
 build-embed-assets:
 	go-bindata -o assetsgen/assets.go -pkg assetsgen assets/...
 
+.PHONY: build
+build: build-embed-assets
+	./build-releases.sh
+
 .PHONY: install
 install: build-embed-assets
 	go install git-docs
