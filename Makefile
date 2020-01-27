@@ -1,5 +1,9 @@
 all: install
 
+.PHONY: prepare-env
+prepare-env:
+	@echo "export GOPATH=$(shell pwd)"
+
 .PHONY: build-prepare
 build-prepare:
 	go get -u github.com/jteeuwen/go-bindata/...

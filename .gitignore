@@ -1,3 +1,6 @@
 debug
 git-docs-releases/
 git-docs-releases.tag.gz
+git-docs
+pkg/
+bin/
