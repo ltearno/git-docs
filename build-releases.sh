@@ -1,4 +1,4 @@
-#!bash
+#!/bin/bash
 
 for spec in "linux amd64" "windows amd64 .exe" "darwin amd64"
 do
@@ -8,5 +8,5 @@ do
     PACKAGE="${GOOS}-${GOARCH}"
     echo ${PACKAGE}
     mkdir -p git-docs-releases/${PACKAGE}
-    go build -o "git-docs-releases/${PACKAGE}/git-docs${EXTENSION}"
+    go build -o "git-docs-releases/${PACKAGE}/git-docs${EXTENSION}" git-docs
 done

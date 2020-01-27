@@ -4,14 +4,14 @@ RUN apk add make git
 
 RUN mkdir /.cache && chmod ugo+rw /.cache
 
-ADD Makefile main.go ./
-ADD repository ./repository/
-ADD tools ./tools/
-ADD webserver ./webserver/
+RUN mkdir -p /test-dir
+
+ADD Makefile ./
+ADD src ./src/
 ADD assets ./assets/
 
 RUN make build-prepare
 RUN make build-embed-assets
 RUN make install
 
-ENTRYPOINT [ "/go/mgit" ]
+ENTRYPOINT [ "/go/bin/git-docs" ]

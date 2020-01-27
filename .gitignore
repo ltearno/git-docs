@@ -4,3 +4,4 @@ git-docs-releases.tag.gz
 git-docs
 pkg/
 bin/
+assetsgen/
